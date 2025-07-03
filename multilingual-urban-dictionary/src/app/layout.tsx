@@ -33,13 +33,18 @@ export const metadata: Metadata = {
 //   );
 // }
 
+
+import NavBar from "@/components/NavBar";
 import Providers from "./providers";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased`}>
-        <Providers>{children}</Providers>
+      <body className="min-h-screen">
+        <Providers>
+          <NavBar />    {/* <-- client component can be nested */}
+          {children}
+        </Providers>
       </body>
     </html>
   );
