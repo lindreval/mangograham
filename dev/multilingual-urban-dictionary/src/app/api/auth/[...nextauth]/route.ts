@@ -1,11 +1,11 @@
 // src/app/api/auth/[...nextauth]/route.ts
-import NextAuth, { type AuthOptions, type SessionStrategy } from "next-auth";
+import NextAuth, { type AuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import prisma from "@/lib/prisma";
 
 // 👇 give the object an explicit type
-export const authOptions: AuthOptions = {
+const authOptions: AuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
@@ -21,7 +21,7 @@ export const authOptions: AuthOptions = {
       // user is only present on the first sign-in
       if (user) {
         token.id = user.id;
-        token.role = (user as any).role;   // still unknown here → cast OK
+        token.role = ((user as { role?: string }).role || 'user') as 'user' | 'moderator' | 'admin';
       }
       return token;
     },

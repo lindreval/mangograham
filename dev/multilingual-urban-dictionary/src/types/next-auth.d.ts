@@ -1,6 +1,5 @@
 // types/next-auth.d.ts  (anywhere inside your tsconfig "include" paths)
-import NextAuth, { DefaultSession, DefaultUser } from "next-auth";
-import { JWT } from "next-auth/jwt";
+import { DefaultSession, DefaultUser } from "next-auth";
 
 type Role = "user" | "moderator" | "admin";
 
