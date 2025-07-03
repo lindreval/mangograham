@@ -39,7 +39,7 @@ import Providers from "./providers";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="min-h-screen">
         <Providers>
           <NavBar />    {/* <-- client component can be nested */}
