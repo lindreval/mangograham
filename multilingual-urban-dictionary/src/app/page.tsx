@@ -102,35 +102,32 @@
 //   );
 // }
 
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 import LanguageSidebar from "@/components/LanguageSidebar";
 import PhraseCard from "@/components/PhraseCard";
-import type { PhraseWithLang } from "@/components/PhraseCard";
 
-export const revalidate = 60; // Incremental Static Regeneration every minute
+export const revalidate = 60; // ISR every minute
 
 export default async function Home() {
   const [phrases, languages] = await Promise.all([
     prisma.phrase.findMany({
       orderBy: { createdAt: "desc" },
       take: 20,
-      include: { language: true },
-    }) as Promise<PhraseWithLang[]>,
-    prisma.language.findMany({ orderBy: { name: "asc" } }),
+      include: { language: true, definitions: { where: { status: "approved" }, take: 1 } },
+    }),
+    prisma.language.findMany(),
   ]);
 
   return (
-    <main className="mx-auto flex max-w-6xl gap-6 p-4">
+    <main className="mx-auto flex max-w-6xl gap-6 px-4 py-6">
+      {/* sidebar */}
       <LanguageSidebar languages={languages} />
 
+      {/* feed */}
       <section className="flex-1 space-y-4">
-        {phrases.length === 0 ? (
-          <p className="text-muted-foreground">
-            No phrases yet. <a href="/submit" className="underline">Be the first to add one!</a>
-          </p>
-        ) : (
-          phrases.map((p) => <PhraseCard key={p.id} phrase={p} />)
-        )}
+        {phrases.map((p) => (
+          <PhraseCard key={p.id} phrase={p} />
+        ))}
       </section>
     </main>
   );
