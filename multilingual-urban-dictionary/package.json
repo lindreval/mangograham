@@ -5,7 +5,7 @@
   "scripts": {
     "prisma:generate": "prisma generate",
     "build": "pnpm run prisma:generate && next build",
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "postinstall": "pnpm run prisma:generate"
   },
   "dependencies": {
