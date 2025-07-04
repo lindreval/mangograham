@@ -132,3 +132,66 @@ export default function Home() {
 //     </main>
 //   );
 // }
+
+// import prisma from "@/lib/prisma";
+// import LanguageSidebar from "@/components/LanguageSidebar";
+// import PhraseCard from "@/components/PhraseCard";
+
+// export const revalidate = 60; // ISR every minute
+
+// export default async function Home() {
+//   const [phrases, languages] = await Promise.all([
+//     prisma.phrase.findMany({
+//       orderBy: { createdAt: "desc" },
+//       take: 20,
+//       include: { language: true, definitions: { where: { status: "approved" }, take: 1 } },
+//     }),
+//     prisma.language.findMany(),
+//   ]);
+
+//   return (
+//     <main className="mx-auto flex max-w-6xl gap-6 px-4 py-6">
+//       {/* sidebar */}
+//       <LanguageSidebar languages={languages} />
+
+//       {/* feed */}
+//       <section className="flex-1 space-y-4">
+//         {phrases.map((p) => (
+//           <PhraseCard key={p.id} phrase={p} />
+//         ))}
+//       </section>
+//     </main>
+//   );
+// }
+
+//import Link from "next/link";
+import { prisma } from "@/lib/prisma";
+import LanguageSidebar from "@/components/LanguageSidebar";
+import PhraseCard from "@/components/PhraseCard";
+
+export const revalidate = 60; // ISR – re-render at most once per minute
+
+export default async function Home() {
+  // Fetch newest 20 phrases + their language name & isoCode
+  const phrases = await prisma.phrase.findMany({
+    orderBy: { createdAt: "desc" },
+    take: 20,
+    include: { language: { select: { id: true, name: true, isoCode: true } } },
+  });
+
+  const languages = await prisma.language.findMany({
+    orderBy: { name: "asc" },
+  });
+
+  return (
+    <main className="mx-auto flex max-w-6xl gap-6 p-4">
+      <LanguageSidebar languages={languages} />
+      <section className="flex-1 space-y-4">
+        {phrases.map((p) => (
+          <PhraseCard key={p.id} phrase={p} />
+        ))}
+      </section>
+    </main>
+  );
+}
+
