@@ -1,23 +1,31 @@
+// src/app/search/page.tsx
 import { prisma } from "@/lib/prisma";
-import { notFound } from "next/navigation";
 import Link from "next/link";
 import slugify from "@/lib/slugify";
+import { notFound } from "next/navigation";
 
-export const revalidate = 30; // ISR every 30 s
+type SearchParams = Record<string, string | string[] | undefined>;
+
+export const revalidate = 30;
 
 export default async function SearchPage({
   searchParams,
 }: {
-  searchParams: { q?: string };
+  // Next.js injects this prop automatically
+  searchParams: Promise<SearchParams>;
 }) {
-  const query = searchParams.q?.trim() ?? "";
+  const params = await searchParams;
+  const raw = params.q;
+  const query = Array.isArray(raw)
+    ? raw[0]?.trim() ?? ""
+    : raw?.trim() ?? "";
+
   if (!query) notFound();
 
-  // naive substring search for MVP
   const results = await prisma.phrase.findMany({
     where: { normalized: { contains: query.toLowerCase() } },
-    orderBy: { createdAt: "desc" },
     take: 50,
+    orderBy: { createdAt: "desc" },
     include: { language: true },
   });
 
@@ -27,30 +35,33 @@ export default async function SearchPage({
         Results for “{query}” ({results.length})
       </h1>
 
-      {results.length === 0 && (
+      {results.length === 0 ? (
         <p>
           Nothing yet.{" "}
-          <Link href={`/submit?prefill=${encodeURIComponent(query)}`} className="underline">
+          <Link
+            href={`/submit?prefill=${encodeURIComponent(query)}`}
+            className="underline"
+          >
             Add it?
           </Link>
         </p>
+      ) : (
+        <ul className="space-y-3">
+          {results.map((p) => (
+            <li key={p.id} className="rounded border p-3">
+              <Link
+                href={`/${p.language.isoCode}/${slugify(p.textOriginal)}-${p.id}`}
+                className="font-medium hover:underline"
+              >
+                {p.textOriginal}
+              </Link>
+              <span className="ml-2 text-sm text-muted-foreground">
+                {p.language.name}
+              </span>
+            </li>
+          ))}
+        </ul>
       )}
-
-      <ul className="space-y-3">
-        {results.map((p) => (
-          <li key={p.id} className="rounded border p-3">
-            <Link
-              href={`/${p.language.isoCode}/${slugify(p.textOriginal)}-${p.id}`}
-              className="font-medium hover:underline"
-            >
-              {p.textOriginal}
-            </Link>
-            <span className="ml-2 text-sm text-muted-foreground">
-              {p.language.name}
-            </span>
-          </li>
-        ))}
-      </ul>
     </main>
   );
 }
