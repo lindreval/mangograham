@@ -25,13 +25,15 @@ model Language {
 model Phrase {
   id           Int          @id @default(autoincrement())
   textOriginal String
-  normalized   String       @db.VarChar(255)
+  normalized   String       @db.VarChar(255)  
   partOfSpeech String?
   language     Language     @relation(fields: [languageId], references: [id])
   languageId   Int
   definitions  Definition[]
   createdAt    DateTime     @default(now())
+  @@index([normalized], name: "idx_phrase_normalized")
 }
+
 
 model Definition {
   id        Int      @id @default(autoincrement())

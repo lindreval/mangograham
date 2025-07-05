@@ -13,13 +13,14 @@ export default function NavBar() {
         </Link>
 
         {/* Search box (non-functional placeholder for now) */}
-        <form action="/search" className="flex-1">
-          <Input
-            name="q"
-            type="search"
-            placeholder="Search a phrase…"
-            className="w-full"
-          />
+        <form action="/search" className="flex-1 max-w-md">
+            <Input
+                name="q"
+                type="search"
+                placeholder="Search a phrase…"
+                defaultValue={new URLSearchParams(window.location.search).get("q") ?? ""}
+                className="w-full"
+            />
         </form>
 
         {/* Auth controls */}
