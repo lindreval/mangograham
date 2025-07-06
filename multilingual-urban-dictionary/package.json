@@ -6,7 +6,11 @@
     "prisma:generate": "prisma generate",
     "build": "pnpm run prisma:generate && next build",
     "dev": "next dev",
-    "postinstall": "pnpm run prisma:generate"
+    "postinstall": "pnpm run prisma:generate",
+    "db:seed": "tsx prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@next-auth/prisma-adapter": "^1.0.7",

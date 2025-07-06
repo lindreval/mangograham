@@ -1,13 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  //output   = "../src/generated/prisma"
-  // output   = "@prisma/client"
 }
 
 datasource db {
@@ -25,27 +17,39 @@ model Language {
 model Phrase {
   id           Int          @id @default(autoincrement())
   textOriginal String
-  normalized   String       @db.VarChar(255)  
+  normalized   String       @db.VarChar(255)
   partOfSpeech String?
-  language     Language     @relation(fields: [languageId], references: [id])
   languageId   Int
-  definitions  Definition[]
   createdAt    DateTime     @default(now())
-  @@index([normalized], name: "idx_phrase_normalized")
+  definitions  Definition[]
+  language     Language     @relation(fields: [languageId], references: [id])
+
+  @@unique([normalized, languageId])
+  @@index([textOriginal, languageId])
 }
 
-
 model Definition {
-  id        Int      @id @default(autoincrement())
-  body      String
-  example   String?
-  mediaUrl  String?
-  authorId  String // auth UID
-  phrase    Phrase   @relation(fields: [phraseId], references: [id])
-  phraseId  Int
-  status    String   @default("pending")
-  votes     Vote[]
-  createdAt DateTime @default(now())
+  id            Int       @id @default(autoincrement())
+  body          String
+  pronunciation String?
+  mediaUrl      String?
+  authorId      String
+  phraseId      Int
+  status        String    @default("pending")
+  createdAt     DateTime  @default(now())
+  phrase        Phrase    @relation(fields: [phraseId], references: [id])
+  votes         Vote[]
+  examples      Example[]
+}
+
+model Example {
+  id           Int        @id @default(autoincrement())
+  text         String
+  translation  String?
+  authorId     String
+  definitionId Int
+  createdAt    DateTime   @default(now())
+  definition   Definition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
 }
 
 model Vote {
@@ -63,25 +67,25 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
-  role          String    @default("user")  // admin | moderator later
+  role          String    @default("user")
   accounts      Account[]
   sessions      Session[]
 }
 
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String? @db.Text
-  access_token       String? @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String? @db.Text
-  session_state      String?
-  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
