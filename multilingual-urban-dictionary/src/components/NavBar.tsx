@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import AuthButton from "@/components/AuthButton";
+import SubmitButton from "@/components/SubmitButton";
 
 export default function NavBar() {
   // ① Read the current query string from Next’s client-side hook
@@ -19,7 +20,7 @@ export default function NavBar() {
         </Link>
 
         {/* Search box now pre-filled from the URL without touching window */}
-        <form action="/search" className="flex-1 max-w-md">
+        <form action="/search" className="mx-auto w-full max-w-xl px-4">
           <Input
             name="q"
             type="search"
@@ -29,8 +30,10 @@ export default function NavBar() {
           />
         </form>
 
-        {/* Auth controls */}
-        <AuthButton />
+        <div className="flex items-center gap-2 ml-auto">
+            <SubmitButton />
+            <AuthButton />
+        </div>
       </div>
     </header>
   );
