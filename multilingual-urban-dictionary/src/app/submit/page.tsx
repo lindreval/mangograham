@@ -1,10 +1,25 @@
 import { prisma } from "@/lib/prisma";
 import { createSubmission } from "./actions";
-import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { authConfig } from "@/lib/auth";
+import { getServerSession } from "next-auth";
+import type { Session } from "next-auth";
+
+// ✅ Add this
+interface CustomSession extends Session {
+  user: {
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+    id: string;
+    role: string;
+  };
+}
 
 export default async function SubmitPage() {
-  const session = await auth();
+  // ✅ Cast session properly
+  const session = (await getServerSession(authConfig)) as CustomSession | null;
+
   if (!session?.user) {
     redirect("/api/auth/signin");
   }
