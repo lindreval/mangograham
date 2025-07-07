@@ -1,10 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { createSubmission } from "./actions";
-import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { authConfig } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 
 export default async function SubmitPage() {
-  const session = await auth();
+  const session = await getServerSession(authConfig);
+  
   if (!session?.user) {
     redirect("/api/auth/signin");
   }
@@ -20,7 +22,6 @@ export default async function SubmitPage() {
   return (
     <main className="mx-auto max-w-xl space-y-6 p-6">
       <h1 className="text-2xl font-bold">Add a Slang Phrase</h1>
-
       <form action={action} className="space-y-4">
         <label className="block">
           <span className="block font-medium">Language</span>
@@ -36,7 +37,6 @@ export default async function SubmitPage() {
             ))}
           </select>
         </label>
-
         <label className="block">
           <span className="block font-medium">Phrase</span>
           <input
@@ -46,7 +46,6 @@ export default async function SubmitPage() {
             required
           />
         </label>
-
         <label className="block">
           <span className="block font-medium">Part of Speech</span>
           <input
@@ -55,7 +54,6 @@ export default async function SubmitPage() {
             placeholder="noun, adjective, etc."
           />
         </label>
-
         <label className="block">
           <span className="block font-medium">Definition</span>
           <textarea
@@ -65,7 +63,6 @@ export default async function SubmitPage() {
             required
           />
         </label>
-
         <label className="block">
           <span className="block font-medium">Example Sentence (optional)</span>
           <textarea
@@ -74,7 +71,6 @@ export default async function SubmitPage() {
             rows={2}
           />
         </label>
-
         <button
           type="submit"
           className="rounded bg-primary px-4 py-2 text-white hover:bg-primary/90"

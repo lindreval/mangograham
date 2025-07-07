@@ -1,26 +1,18 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
-
-// const session = await getServerSession(authConfig);
-
-// const schema = z.object({
-//   phrase: z.string().min(1).max(80),
-//   languageId: z.string(),
-//   definition: z.string().min(1),
-//   partOfSpeech: z.string().optional(),
-//   example: z.string().optional(),
-// });
+import { authConfig } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 
 export async function createSubmission(formData: FormData) {
-  const session = await auth();
+  const session = await getServerSession(authConfig);
+  
   if (!session?.user) {
     throw new Error("You must be signed in to submit.");
   }
 
   const userId = session.user.id;
-
+  
   const data = {
     phrase: formData.get("phrase") as string,
     definition: formData.get("definition") as string,
@@ -56,5 +48,3 @@ export async function createSubmission(formData: FormData) {
     return phrase;
   });
 }
-
-
