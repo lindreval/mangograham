@@ -24,7 +24,7 @@ model Phrase {
   definitions  Definition[]
   language     Language     @relation(fields: [languageId], references: [id])
 
-  @@unique([normalized, languageId])
+  @@unique([languageId, normalized], name: "normalized_languageId")
   @@index([textOriginal, languageId])
 }
 
