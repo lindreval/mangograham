@@ -1,20 +1,23 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { authConfig } from "@/lib/auth";
+import { getServerSession } from "next-auth";
+import type { Session } from "next-auth";
 
-// const session = await getServerSession(authConfig);
-
-// const schema = z.object({
-//   phrase: z.string().min(1).max(80),
-//   languageId: z.string(),
-//   definition: z.string().min(1),
-//   partOfSpeech: z.string().optional(),
-//   example: z.string().optional(),
-// });
+interface CustomSession extends Session {
+  user: {
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+    id: string;
+    role: string;
+  };
+}
 
 export async function createSubmission(formData: FormData) {
-  const session = await auth();
+  const session = (await getServerSession(authConfig)) as CustomSession | null;
+
   if (!session?.user) {
     throw new Error("You must be signed in to submit.");
   }
@@ -56,5 +59,3 @@ export async function createSubmission(formData: FormData) {
     return phrase;
   });
 }
-
-
