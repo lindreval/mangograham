@@ -34,6 +34,7 @@ model Definition {
   pronunciation String?
   mediaUrl      String?
   authorId      String
+  author        User      @relation("UserDefinitions", fields: [authorId], references: [id])
   phraseId      Int
   status        String    @default("pending")
   createdAt     DateTime  @default(now())
@@ -70,6 +71,7 @@ model User {
   role          String    @default("user")
   accounts      Account[]
   sessions      Session[]
+  definitions   Definition[]  @relation("UserDefinitions")
 }
 
 model Account {
