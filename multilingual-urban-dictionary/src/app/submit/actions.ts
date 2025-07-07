@@ -3,27 +3,16 @@
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/lib/auth";
 import { getServerSession } from "next-auth";
-import type { Session } from "next-auth";
-
-interface CustomSession extends Session {
-  user: {
-    name?: string | null;
-    email?: string | null;
-    image?: string | null;
-    id: string;
-    role: string;
-  };
-}
 
 export async function createSubmission(formData: FormData) {
-  const session = (await getServerSession(authConfig)) as CustomSession | null;
-
+  const session = await getServerSession(authConfig);
+  
   if (!session?.user) {
     throw new Error("You must be signed in to submit.");
   }
 
   const userId = session.user.id;
-
+  
   const data = {
     phrase: formData.get("phrase") as string,
     definition: formData.get("definition") as string,
