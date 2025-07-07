@@ -39,7 +39,7 @@ model Definition {
   status        String    @default("pending")
   createdAt     DateTime  @default(now())
   phrase        Phrase    @relation(fields: [phraseId], references: [id])
-  votes         Vote[]
+  votes DefinitionVote[]
   examples      Example[]
 }
 
@@ -51,16 +51,33 @@ model Example {
   definitionId Int
   createdAt    DateTime   @default(now())
   definition   Definition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
+  votes ExampleVote[]
 }
 
-model Vote {
+model DefinitionVote {
   userId       String
   definitionId Int
   value        Int
-  Definition   Definition @relation(fields: [definitionId], references: [id])
+  createdAt    DateTime  @default(now())
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  definition   Definition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
 
   @@id([userId, definitionId])
 }
+
+model ExampleVote {
+  userId     String
+  exampleId  Int
+  value      Int
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  example    Example   @relation(fields: [exampleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, exampleId])
+}
+
+
+
 
 model User {
   id            String    @id @default(cuid())
@@ -72,6 +89,8 @@ model User {
   accounts      Account[]
   sessions      Session[]
   definitions   Definition[]  @relation("UserDefinitions")
+  definitionVotes DefinitionVote[]
+  exampleVotes    ExampleVote[]
 }
 
 model Account {
