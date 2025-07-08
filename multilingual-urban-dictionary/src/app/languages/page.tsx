@@ -1,4 +1,4 @@
-// src/app/languages/page.tsx
+// src/app/languages/page.tsx 
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 
