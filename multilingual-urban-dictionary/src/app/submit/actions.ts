@@ -5,6 +5,7 @@ import { authConfig } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import slugify from "@/lib/slugify";
 import type { Session } from "next-auth";
+import { updateUserReputation } from "@/lib/reputation";
 
 interface CustomSession extends Session {
   user: {
@@ -60,23 +61,32 @@ export async function createSubmission(formData: FormData) {
       });
     } else {
       // Creating new phrase/definition (existing logic)
-      const phrase = await tx.phrase.upsert({
+      // First check if phrase exists
+      const existingPhrase = await tx.phrase.findFirst({
         where: {
-          normalized_languageId: {
-            normalized: data.phrase.toLowerCase(),
-            languageId: parseInt(data.languageId),
-          },
-        },
-        update: {},
-        create: {
-          textOriginal: data.phrase,
           normalized: data.phrase.toLowerCase(),
-          slug: slugify(data.transliteration || data.phrase),
-          partOfSpeech: data.partOfSpeech,
-          transliteration: data.transliteration && data.transliteration.trim() ? data.transliteration.trim() : null,
           languageId: parseInt(data.languageId),
-        },
+        }
       });
+
+      let phrase;
+      if (existingPhrase) {
+        // Phrase exists, use it as is
+        phrase = existingPhrase;
+      } else {
+        // Create new phrase with authorId
+        phrase = await tx.phrase.create({
+          data: {
+            textOriginal: data.phrase,
+            normalized: data.phrase.toLowerCase(),
+            slug: slugify(data.transliteration || data.phrase),
+            partOfSpeech: data.partOfSpeech,
+            transliteration: data.transliteration && data.transliteration.trim() ? data.transliteration.trim() : null,
+            languageId: parseInt(data.languageId),
+            authorId: userId,
+          },
+        });
+      }
 
       const definition = await tx.definition.create({
         data: {
@@ -97,6 +107,9 @@ export async function createSubmission(formData: FormData) {
           },
         });
       }
+
+      // Update user's reputation after submission
+      await updateUserReputation(userId);
 
       return phrase;
     }

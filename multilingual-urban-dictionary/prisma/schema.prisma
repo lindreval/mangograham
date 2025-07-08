@@ -24,9 +24,13 @@ model Phrase {
   pronunciation  String?
   transliteration String?
   languageId     Int
+  authorId       String?
+  status         String       @default("pending")
   createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
   definitions    Definition[]
   language       Language     @relation(fields: [languageId], references: [id])
+  author         User?        @relation("UserPhrases", fields: [authorId], references: [id])
 
   @@unique([languageId, normalized], name: "normalized_languageId")
   @@index([textOriginal, languageId])
@@ -40,6 +44,7 @@ model Definition {
   phraseId  Int
   status    String           @default("pending")
   createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
   author    User             @relation("UserDefinitions", fields: [authorId], references: [id])
   phrase    Phrase           @relation(fields: [phraseId], references: [id])
   votes     DefinitionVote[]
@@ -54,6 +59,7 @@ model Example {
   definitionId Int
   status       String        @default("approved")
   createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   author       User          @relation("UserExamples", fields: [authorId], references: [id])
   definition   Definition    @relation(fields: [definitionId], references: [id], onDelete: Cascade)
   votes        ExampleVote[]
@@ -84,13 +90,20 @@ model ExampleVote {
 model User {
   id              String           @id @default(cuid())
   name            String?
+  username        String?          @unique
   email           String?          @unique
   emailVerified   DateTime?
   image           String?
+  bio             String?
+  location        String?
+  languagesSpoken String[]         @default([])
+  reputation      Int              @default(0)
   role            String           @default("user")
+  createdAt       DateTime         @default(now())
   accounts        Account[]
   definitions     Definition[]     @relation("UserDefinitions")
   examples        Example[]        @relation("UserExamples")
+  phrases         Phrase[]         @relation("UserPhrases")
   definitionVotes DefinitionVote[]
   exampleVotes    ExampleVote[]
   sessions        Session[]

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import { revalidatePath } from "next/cache";
+import { updateUserReputation } from "@/lib/reputation";
 
 export async function voteOnDefinition(definitionId: number, value: number) {
   try {
@@ -58,6 +59,16 @@ export async function voteOnDefinition(definitionId: number, value: number) {
           value,
         },
       });
+    }
+
+    // Update the author's reputation after voting
+    const definition = await prisma.definition.findUnique({
+      where: { id: definitionId },
+      select: { authorId: true }
+    });
+
+    if (definition?.authorId) {
+      await updateUserReputation(definition.authorId);
     }
 
     revalidatePath(`/`);
@@ -121,6 +132,16 @@ export async function voteOnExample(exampleId: number, value: number) {
           value,
         },
       });
+    }
+
+    // Update the author's reputation after voting
+    const example = await prisma.example.findUnique({
+      where: { id: exampleId },
+      select: { authorId: true }
+    });
+
+    if (example?.authorId) {
+      await updateUserReputation(example.authorId);
     }
 
     revalidatePath(`/`);
