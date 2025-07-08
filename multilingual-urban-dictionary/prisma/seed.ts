@@ -164,6 +164,7 @@ async function main() {
       data: {
         textOriginal: 'güey',
         normalized: 'guey',
+        slug: 'guey',
         partOfSpeech: 'noun',
         languageId: spanish.id,
       },
@@ -172,6 +173,7 @@ async function main() {
       data: {
         textOriginal: 'pinche',
         normalized: 'pinche',
+        slug: 'pinche',
         partOfSpeech: 'adjective',
         languageId: spanish.id,
       },
@@ -180,6 +182,7 @@ async function main() {
       data: {
         textOriginal: 'churro',
         normalized: 'churro',
+        slug: 'churro',
         partOfSpeech: 'noun',
         languageId: spanish.id,
       },
@@ -188,6 +191,7 @@ async function main() {
       data: {
         textOriginal: 'fresa',
         normalized: 'fresa',
+        slug: 'fresa',
         partOfSpeech: 'noun',
         languageId: spanish.id,
       },
@@ -196,6 +200,7 @@ async function main() {
       data: {
         textOriginal: 'estar cañón',
         normalized: 'estar canon',
+        slug: 'estar-canon',
         partOfSpeech: 'expression',
         languageId: spanish.id,
       },
@@ -208,6 +213,7 @@ async function main() {
       data: {
         textOriginal: 'petmalu',
         normalized: 'petmalu',
+        slug: 'petmalu',
         partOfSpeech: 'adjective',
         languageId: tagalog.id,
       },
@@ -216,6 +222,7 @@ async function main() {
       data: {
         textOriginal: 'ghosting',
         normalized: 'ghosting',
+        slug: 'ghosting',
         partOfSpeech: 'verb',
         languageId: tagalog.id,
       },
@@ -224,6 +231,7 @@ async function main() {
       data: {
         textOriginal: 'pa-fall',
         normalized: 'pa fall',
+        slug: 'pa-fall',
         partOfSpeech: 'verb',
         languageId: tagalog.id,
       },
@@ -232,6 +240,7 @@ async function main() {
       data: {
         textOriginal: 'werpa',
         normalized: 'werpa',
+        slug: 'werpa',
         partOfSpeech: 'interjection',
         languageId: tagalog.id,
       },
@@ -240,6 +249,7 @@ async function main() {
       data: {
         textOriginal: 'beshie',
         normalized: 'beshie',
+        slug: 'beshie',
         partOfSpeech: 'noun',
         languageId: tagalog.id,
       },
@@ -252,6 +262,7 @@ async function main() {
       data: {
         textOriginal: '대박',
         normalized: '대박',
+        slug: 'daebak',
         partOfSpeech: 'interjection',
         languageId: korean.id,
       },
@@ -260,6 +271,7 @@ async function main() {
       data: {
         textOriginal: '썸타다',
         normalized: '썸타다',
+        slug: 'sseomtada',
         partOfSpeech: 'verb',
         languageId: korean.id,
       },
@@ -268,6 +280,7 @@ async function main() {
       data: {
         textOriginal: '엄친아',
         normalized: '엄친아',
+        slug: 'eomchina',
         partOfSpeech: 'noun',
         languageId: korean.id,
       },
@@ -276,6 +289,7 @@ async function main() {
       data: {
         textOriginal: '헬조선',
         normalized: '헬조선',
+        slug: 'heljoseon',
         partOfSpeech: 'noun',
         languageId: korean.id,
       },
@@ -284,6 +298,7 @@ async function main() {
       data: {
         textOriginal: '갑분싸',
         normalized: '갑분싸',
+        slug: 'gapbunsssa',
         partOfSpeech: 'expression',
         languageId: korean.id,
       },

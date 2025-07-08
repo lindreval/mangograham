@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/lib/auth";
 import { getServerSession } from "next-auth";
+import slugify from "@/lib/slugify";
 import type { Session } from "next-auth";
 
 interface CustomSession extends Session {
@@ -43,6 +44,7 @@ export async function createSubmission(formData: FormData) {
       create: {
         textOriginal: data.phrase,
         normalized: data.phrase.toLowerCase(),
+        slug: slugify(data.phrase),
         partOfSpeech: data.partOfSpeech,
         languageId: parseInt(data.languageId),
       },

@@ -1,7 +1,6 @@
 // src/app/search/page.tsx
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import slugify from "@/lib/slugify";
 import { notFound } from "next/navigation";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -26,7 +25,17 @@ export default async function SearchPage({
     where: { normalized: { contains: query.toLowerCase() } },
     take: 50,
     orderBy: { createdAt: "desc" },
-    include: { language: true },
+    select: {
+      id: true,
+      textOriginal: true,
+      slug: true,
+      language: {
+        select: {
+          name: true,
+          isoCode: true,
+        },
+      },
+    },
   });
 
   return (
@@ -50,7 +59,7 @@ export default async function SearchPage({
           {results.map((p) => (
             <li key={p.id} className="rounded border p-3">
               <Link
-                href={`/${p.language.isoCode}/${slugify(p.textOriginal)}-${p.id}`}
+                href={`/${p.language.isoCode}/${p.slug}`}
                 className="font-medium hover:underline"
               >
                 {p.textOriginal}

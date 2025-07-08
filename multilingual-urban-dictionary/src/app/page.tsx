@@ -143,10 +143,23 @@ export const revalidate = 60; // ISR – re-render at most once per minute
 export default async function Home() {
   // Fetch newest 20 phrases + their language name & isoCode
   const phrases = await prisma.phrase.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 20,
-    include: { language: { select: { id: true, name: true, isoCode: true } } },
-  });
+  where: {
+    definitions: {
+      some: {
+        status: {
+          in: ["approved", "pending"],
+        },
+      },
+    },
+  },
+  orderBy: { createdAt: "desc" },
+  take: 20,
+  include: {
+    language: {
+      select: { id: true, name: true, isoCode: true },
+    },
+  },
+});
 
   const languages = await prisma.language.findMany({
     orderBy: { name: "asc" },

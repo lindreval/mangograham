@@ -8,12 +8,11 @@ import { authConfig } from "@/lib/auth";
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ lang: string; slugId: string }>;
+  params: Promise<{ lang: string; slug: string }>;
 }): Promise<Metadata> {
-  const { slugId } = await params;
-  const id = parseInt(slugId.split("-").pop()!);
+  const { slug } = await params;
   const phrase = await prisma.phrase.findUnique({
-    where: { id },
+    where: { slug },
     include: { language: true },
   });
 
@@ -26,23 +25,20 @@ export async function generateMetadata({
 export default async function PhrasePage({
   params,
 }: {
-  params: Promise<{ lang: string; slugId: string }>;
+  params: Promise<{ lang: string; slug: string }>;
 }) {
-  const { lang, slugId } = await params;
-  const id = parseInt(slugId.split("-").pop()!);
+  const { lang, slug } = await params;
   
-  if (isNaN(id)) return notFound();
-
   // Get current user session
   const session = await getServerSession(authConfig);
   const userId = session?.user?.id;
 
   const phrase = await prisma.phrase.findUnique({
-    where: { id },
+    where: { slug },
     include: {
       language: true,
       definitions: {
-        where: { status: "approved" },
+        where: { status: {in: ["approved", "pending"],} },
         include: {
           examples: {
             include: {
@@ -62,7 +58,7 @@ export default async function PhrasePage({
     <main className="mx-auto max-w-3xl p-6 space-y-6">
       <h1 className="text-3xl font-bold">{phrase.textOriginal}</h1>
       <p className="text-muted-foreground">
-        Language: {phrase.language.name} ({phrase.language.isoCode})
+        Language: {phrase.language.name}
       </p>
       {phrase.definitions.length === 0 ? (
         <p className="text-sm text-muted-foreground">No approved definitions yet.</p>

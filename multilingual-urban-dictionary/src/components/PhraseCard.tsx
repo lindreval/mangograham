@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { Phrase, Language } from "@prisma/client";
-import slugify from "@/lib/slugify";
 
 // Augmented type that includes nested language
 export interface PhraseWithLang extends Phrase {
@@ -23,7 +22,7 @@ export default function PhraseCard({ phrase }: { phrase: PhraseWithLang }) {
       </header>
 
       <Link
-        href={`/${phrase.language.isoCode}/${slugify(phrase.textOriginal)}-${phrase.id}`}
+        href={`/${phrase.language.isoCode}/${phrase.slug}`}
         className="text-lg font-semibold hover:underline"
       >
         {phrase.textOriginal}

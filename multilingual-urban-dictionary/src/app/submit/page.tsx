@@ -59,14 +59,14 @@ export default async function SubmitPage() {
             required
           />
         </label>
-        <label className="block">
+        {/* <label className="block">
           <span className="block font-medium">Part of Speech</span>
           <input
             name="partOfSpeech"
             className="w-full rounded border p-2"
             placeholder="noun, adjective, etc."
           />
-        </label>
+        </label> */}
         <label className="block">
           <span className="block font-medium">Definition</span>
           <textarea
@@ -77,7 +77,7 @@ export default async function SubmitPage() {
           />
         </label>
         <label className="block">
-          <span className="block font-medium">Example Sentence (optional)</span>
+          <span className="block font-medium">Example Sentence</span>
           <textarea
             name="example"
             className="w-full rounded border p-2"
