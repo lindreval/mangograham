@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,14 @@ export default function NavBar() {
     <header className="sticky top-0 z-30 w-full border-b bg-background/60 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4">
         {/* Site logo / brand */}
-        <Link href="/" className="font-semibold">
+        <Link href="/" className="flex items-center gap-2 font-semibold hover:opacity-80 transition-opacity">
+          <Image
+            src="/yungsalita.png"
+            alt="Yung Salita"
+            width={32}
+            height={32}
+            className="rounded"
+          />
           Yung Salita
         </Link>
 
