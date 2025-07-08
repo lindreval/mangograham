@@ -169,6 +169,16 @@ export default async function Home() {
           author: {
             select: { name: true, email: true },
           },
+          examples: {
+            where: {
+              status: {
+                in: ["approved", "pending"],
+              },
+            },
+            include: {
+              votes: true,
+            },
+          },
         },
       },
     },

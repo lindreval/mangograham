@@ -3,6 +3,7 @@
 
 import { useTransition } from "react";
 import { voteOnDefinition, voteOnExample } from "@/app/actions/vote";
+import { ChevronUp, ChevronDown } from "lucide-react";
 
 export default function VoteButtons({
   score,
@@ -51,7 +52,7 @@ export default function VoteButtons({
         `}
         title={userVote === 1 ? "Remove upvote" : "Upvote"}
       >
-        👍
+        <ChevronUp className="h-4 w-4" />
       </button>
       <span className="text-sm font-medium min-w-[1.5rem] text-center">{score}</span>
       <button
@@ -66,7 +67,7 @@ export default function VoteButtons({
         `}
         title={userVote === -1 ? "Remove downvote" : "Downvote"}
       >
-        👎
+        <ChevronDown className="h-4 w-4" />
       </button>
     </div>
   );
