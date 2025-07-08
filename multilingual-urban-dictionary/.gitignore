@@ -44,3 +44,6 @@ next-env.d.ts
 CLAUDE.md
 .claude/
 claude-*
+
+# seed data file
+multilingual-urban-dictionary/prisma/seed.ts

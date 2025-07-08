@@ -7,6 +7,7 @@ import { useState } from "react";
 interface Language {
   id: number;
   name: string;
+  transliteration: boolean;
 }
 
 interface SubmitFormProps {
@@ -16,6 +17,7 @@ interface SubmitFormProps {
 export default function SubmitForm({ languages }: SubmitFormProps) {
   const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedLanguageId, setSelectedLanguageId] = useState(searchParams.get("languageId") || "");
   
   // Get pre-filled values from URL params
   const preFilledPhrase = searchParams.get("phrase") || "";
@@ -27,6 +29,10 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
   const isExistingPhrase = preFilledPhrase && preFilledLanguageId;
   // Check if this is for adding an example to an existing definition
   const isExistingDefinition = isExistingPhrase && preFilledDefinition && preFilledDefinitionId;
+  
+  // Find the selected language and check if it requires transliteration
+  const selectedLanguage = languages.find(l => l.id.toString() === selectedLanguageId);
+  const requiresTransliteration = selectedLanguage?.transliteration || false;
 
   async function handleSubmit(formData: FormData) {
     setIsSubmitting(true);
@@ -81,7 +87,8 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
               ? "bg-gray-100 text-gray-600 cursor-not-allowed" 
               : ""
           }`}
-          defaultValue={preFilledLanguageId}
+          value={selectedLanguageId}
+          onChange={(e) => setSelectedLanguageId(e.target.value)}
           disabled={!!isExistingPhrase}
           required
         >
@@ -109,6 +116,18 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
           required
         />
       </label>
+      
+      {requiresTransliteration && !isExistingPhrase && (
+        <label className="block">
+          <span className="block font-medium">English Transliteration</span>
+          <input
+            name="transliteration"
+            className="w-full rounded border p-2"
+            placeholder="e.g. 'daebak' instead of 대박"
+            required
+          />
+        </label>
+      )}
       
       {isExistingDefinition && (
         <label className="block">

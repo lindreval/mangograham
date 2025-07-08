@@ -76,7 +76,14 @@ export default async function PhrasePage({
     <main className="mx-auto max-w-3xl p-6 space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold">{phrase.textOriginal}</h1>
+          <h1 className="text-3xl font-bold">
+            {phrase.textOriginal}
+            {phrase.transliteration && (
+              <span className="ml-3 text-xl text-muted-foreground font-normal">
+                ({phrase.transliteration})
+              </span>
+            )}
+          </h1>
           <p className="text-muted-foreground">
             Language: {phrase.language.name}
           </p>

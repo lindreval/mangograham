@@ -33,6 +33,7 @@ export async function createSubmission(formData: FormData) {
     example: formData.get("example") as string,
     exampleTranslation: formData.get("exampleTranslation") as string,
     definitionId: formData.get("definitionId") as string,
+    transliteration: formData.get("transliteration") as string,
   };
 
   // Check if this is adding an example to existing definition
@@ -70,8 +71,9 @@ export async function createSubmission(formData: FormData) {
         create: {
           textOriginal: data.phrase,
           normalized: data.phrase.toLowerCase(),
-          slug: slugify(data.phrase),
+          slug: slugify(data.transliteration || data.phrase),
           partOfSpeech: data.partOfSpeech,
+          transliteration: data.transliteration && data.transliteration.trim() ? data.transliteration.trim() : null,
           languageId: parseInt(data.languageId),
         },
       });

@@ -8,23 +8,25 @@ datasource db {
 }
 
 model Language {
-  id      Int      @id @default(autoincrement())
-  name    String
-  isoCode String   @unique
-  phrases Phrase[]
+  id             Int      @id @default(autoincrement())
+  name           String
+  isoCode        String   @unique
+  transliteration Boolean  @default(false)
+  phrases        Phrase[]
 }
 
 model Phrase {
-  id           Int          @id @default(autoincrement())
-  textOriginal String
-  normalized   String       @db.VarChar(255)
-  slug         String       @unique
-  partOfSpeech String?
-  pronunciation String?
-  languageId   Int
-  createdAt    DateTime     @default(now())
-  definitions  Definition[]
-  language     Language     @relation(fields: [languageId], references: [id])
+  id             Int          @id @default(autoincrement())
+  textOriginal   String
+  normalized     String       @db.VarChar(255)
+  slug           String       @unique
+  partOfSpeech   String?
+  pronunciation  String?
+  transliteration String?
+  languageId     Int
+  createdAt      DateTime     @default(now())
+  definitions    Definition[]
+  language       Language     @relation(fields: [languageId], references: [id])
 
   @@unique([languageId, normalized], name: "normalized_languageId")
   @@index([textOriginal, languageId])

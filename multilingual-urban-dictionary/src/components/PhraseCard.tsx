@@ -49,6 +49,11 @@ export default function PhraseCard({ phrase }: { phrase: PhraseWithLang }) {
 
         <h2 className="text-lg font-semibold hover:underline mb-2">
           {phrase.textOriginal}
+          {phrase.transliteration && (
+            <span className="ml-2 text-sm text-muted-foreground font-normal">
+              ({phrase.transliteration})
+            </span>
+          )}
         </h2>
 
         {topDefinition && (
