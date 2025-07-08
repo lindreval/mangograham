@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Search } from "lucide-react";
 import AuthButton from "@/components/AuthButton";
 import SubmitButton from "@/components/SubmitButton";
 
@@ -21,13 +23,24 @@ export default function NavBar() {
 
         {/* Search box now pre-filled from the URL without touching window */}
         <form action="/search" className="mx-auto w-full max-w-xl px-4">
-          <Input
-            name="q"
-            type="search"
-            placeholder="Search a phrase…"
-            defaultValue={q}                   // ② use the hook’s value here
-            className="w-full"
-          />
+          <div className="relative flex items-center">
+            <Input
+              name="q"
+              type="search"
+              placeholder="Search a phrase…"
+              defaultValue={q}                   // ② use the hook’s value here
+              className="w-full pr-10"
+            />
+            <Button
+              type="submit"
+              size="sm"
+              variant="ghost"
+              className="absolute right-1 h-8 w-8 p-0 hover:bg-muted"
+            >
+              <Search className="h-4 w-4" />
+              <span className="sr-only">Search</span>
+            </Button>
+          </div>
         </form>
 
         <div className="flex items-center gap-2 ml-auto">

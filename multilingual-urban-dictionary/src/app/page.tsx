@@ -141,25 +141,38 @@ import PhraseCard from "@/components/PhraseCard";
 export const revalidate = 60; // ISR – re-render at most once per minute
 
 export default async function Home() {
-  // Fetch newest 20 phrases + their language name & isoCode
+  // Fetch newest 20 phrases + their language name & isoCode + top definitions
   const phrases = await prisma.phrase.findMany({
-  where: {
-    definitions: {
-      some: {
-        status: {
-          in: ["approved", "pending"],
+    where: {
+      definitions: {
+        some: {
+          status: {
+            in: ["approved", "pending"],
+          },
         },
       },
     },
-  },
-  orderBy: { createdAt: "desc" },
-  take: 20,
-  include: {
-    language: {
-      select: { id: true, name: true, isoCode: true },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+    include: {
+      language: {
+        select: { id: true, name: true, isoCode: true },
+      },
+      definitions: {
+        where: {
+          status: {
+            in: ["approved", "pending"],
+          },
+        },
+        include: {
+          votes: true,
+          author: {
+            select: { name: true, email: true },
+          },
+        },
+      },
     },
-  },
-});
+  });
 
   const languages = await prisma.language.findMany({
     orderBy: { name: "asc" },

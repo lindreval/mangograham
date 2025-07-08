@@ -51,6 +51,7 @@ model Example {
   authorId     String
   definitionId Int
   createdAt    DateTime      @default(now())
+  author       User          @relation("UserExamples", fields: [authorId], references: [id])
   definition   Definition    @relation(fields: [definitionId], references: [id], onDelete: Cascade)
   votes        ExampleVote[]
 }
@@ -86,6 +87,7 @@ model User {
   role            String           @default("user")
   accounts        Account[]
   definitions     Definition[]     @relation("UserDefinitions")
+  examples        Example[]        @relation("UserExamples")
   definitionVotes DefinitionVote[]
   exampleVotes    ExampleVote[]
   sessions        Session[]

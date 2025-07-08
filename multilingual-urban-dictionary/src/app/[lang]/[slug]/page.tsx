@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import VoteButtons from "@/components/VoteButtons";
 import { getServerSession } from "next-auth";
 import { authConfig } from "@/lib/auth";
+import Link from "next/link";
 
 export async function generateMetadata({
   params,
@@ -40,26 +41,53 @@ export default async function PhrasePage({
       definitions: {
         where: { status: {in: ["approved", "pending"],} },
         include: {
+          author: true, // Include definition author
           examples: {
             include: {
               votes: true, // This gets ExampleVote[]
+              author: true, // Include example author
             },
           },
           votes: true, // This gets DefinitionVote[]
         },
-        orderBy: { createdAt: "desc" },
       },
     },
   });
+
+  // Helper function to calculate vote score
+  const getVoteScore = (votes: { value: number }[]) => 
+    votes.reduce((sum, v) => sum + v.value, 0);
+
+  // Sort by vote score (highest to lowest)
+  const sortByVotes = (a: { votes: { value: number }[] }, b: { votes: { value: number }[] }) => 
+    getVoteScore(b.votes) - getVoteScore(a.votes);
+
+  // Sort definitions and examples by vote score
+  if (phrase) {
+    phrase.definitions.sort(sortByVotes);
+    phrase.definitions.forEach(def => def.examples.sort(sortByVotes));
+  }
 
   if (!phrase || phrase.language.isoCode !== lang) return notFound();
 
   return (
     <main className="mx-auto max-w-3xl p-6 space-y-6">
-      <h1 className="text-3xl font-bold">{phrase.textOriginal}</h1>
-      <p className="text-muted-foreground">
-        Language: {phrase.language.name}
-      </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">{phrase.textOriginal}</h1>
+          <p className="text-muted-foreground">
+            Language: {phrase.language.name}
+          </p>
+        </div>
+        {userId && (
+          <Link
+            href={`/submit?phrase=${encodeURIComponent(phrase.textOriginal)}&languageId=${phrase.languageId}`}
+            className="rounded bg-primary px-4 py-2 text-sm text-white hover:bg-primary/90"
+          >
+            + New Definition
+          </Link>
+        )}
+      </div>
       {phrase.definitions.length === 0 ? (
         <p className="text-sm text-muted-foreground">No approved definitions yet.</p>
       ) : (
@@ -71,6 +99,12 @@ export default async function PhrasePage({
             return (
               <li key={def.id} className="rounded border p-4 space-y-2">
                 <p className="mb-1">{def.body}</p>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>By {def.author.name || def.author.email || 'Anonymous'}</span>
+                  <time dateTime={def.createdAt.toISOString()}>
+                    {def.createdAt.toLocaleDateString()}
+                  </time>
+                </div>
                 {/* ✅ Voting for Definition */}
                 <VoteButtons
                   score={def.votes.reduce((sum, v) => sum + v.value, 0)}
@@ -83,27 +117,54 @@ export default async function PhrasePage({
                     Pronunciation: {def.pronunciation}
                   </p>
                 )}
-                {def.examples.length > 0 && (
-                  <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
-                    {def.examples.map((ex) => {
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium text-muted-foreground">
+                      Examples{def.examples.length > 0 ? `:` : ''}
+                    </h4>
+                    {userId && (
+                      <Link
+                        href={`/submit?phrase=${encodeURIComponent(phrase.textOriginal)}&languageId=${phrase.languageId}&definition=${encodeURIComponent(def.body)}&definitionId=${def.id}`}
+                        className="rounded bg-secondary px-3 py-1 text-xs text-secondary-foreground hover:bg-secondary/80"
+                      >
+                        + Add Example
+                      </Link>
+                    )}
+                  </div>
+                  {def.examples.length > 0 && (
+                    <div className="space-y-3">
+                      {def.examples.map((ex) => {
                       // Find current user's vote on this example
                       const userExampleVote = userId ? ex.votes.find(v => v.userId === userId) : null;
                       
                       return (
-                        <li key={ex.id} className="flex items-center justify-between">
-                          <span>– {ex.text}</span>
-                          {/* ✅ Voting for Example */}
-                          <VoteButtons
-                            score={ex.votes.reduce((sum, v) => sum + v.value, 0)}
-                            type="example"
-                            id={ex.id}
-                            userVote={userExampleVote?.value || null}
-                          />
-                        </li>
+                        <div key={ex.id} className="rounded border bg-muted/30 p-3 space-y-2">
+                          <p className="text-sm italic">&ldquo;{ex.text}&rdquo;</p>
+                          {ex.translation && (
+                            <p className="text-xs text-muted-foreground">
+                              Translation: {ex.translation}
+                            </p>
+                          )}
+                          <div className="flex items-center justify-between">
+                            <div className="flex flex-col text-xs text-muted-foreground">
+                              <span>By {ex.author.name || ex.author.email || 'Anonymous'}</span>
+                              <time dateTime={ex.createdAt.toISOString()}>
+                                {ex.createdAt.toLocaleDateString()}
+                              </time>
+                            </div>
+                            <VoteButtons
+                              score={ex.votes.reduce((sum, v) => sum + v.value, 0)}
+                              type="example"
+                              id={ex.id}
+                              userVote={userExampleVote?.value || null}
+                            />
+                          </div>
+                        </div>
                       );
                     })}
-                  </ul>
-                )}
+                    </div>
+                  )}
+                </div>
               </li>
             );
           })}

@@ -50,7 +50,9 @@ export default async function LanguagePage({
       languageId: language.id,
       definitions: {
         some: {
-          status: "approved",
+          status: {
+            in: ["approved", "pending"],
+          },
         },
       },
     },
@@ -61,12 +63,16 @@ export default async function LanguagePage({
           isoCode: true,
         },
       },
-      _count: {
-        select: {
-          definitions: {
-            where: {
-              status: "approved",
-            },
+      definitions: {
+        where: {
+          status: {
+            in: ["approved", "pending"],
+          },
+        },
+        include: {
+          votes: true,
+          author: {
+            select: { name: true, email: true },
           },
         },
       },
