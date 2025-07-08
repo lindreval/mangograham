@@ -22,46 +22,45 @@ export default function PhraseCard({ phrase }: { phrase: PhraseWithLang }) {
     : null;
 
   return (
-    <article className="rounded-lg border p-4 shadow-sm">
-      <header className="mb-3 flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">
-          {phrase.language.name}
-        </span>
-        <time
-          dateTime={phrase.createdAt.toISOString()}
-          className="text-xs text-muted-foreground"
-        >
-          {phrase.createdAt.toLocaleDateString()}
-        </time>
-      </header>
+    <Link href={`/${phrase.language.isoCode}/${phrase.slug}`}>
+      <article className="rounded-lg border p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+        <header className="mb-3 flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">
+            {phrase.language.name}
+          </span>
+          <time
+            dateTime={phrase.createdAt.toISOString()}
+            className="text-xs text-muted-foreground"
+          >
+            {phrase.createdAt.toLocaleDateString()}
+          </time>
+        </header>
 
-      <Link
-        href={`/${phrase.language.isoCode}/${phrase.slug}`}
-        className="text-lg font-semibold hover:underline block mb-2"
-      >
-        {phrase.textOriginal}
-      </Link>
+        <h2 className="text-lg font-semibold hover:underline mb-2">
+          {phrase.textOriginal}
+        </h2>
 
-      {topDefinition && (
-        <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">
-            {topDefinition.body.length > 100 
-              ? `${topDefinition.body.substring(0, 100)}...` 
-              : topDefinition.body}
-          </p>
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>
-              By {topDefinition.author.name || topDefinition.author.email || 'Anonymous'}
-            </span>
-            <span className="flex items-center gap-1">
-              <span className={topDefinition.score >= 0 ? "text-green-600" : "text-red-600"}>
-                {topDefinition.score > 0 ? '+' : ''}{topDefinition.score}
+        {topDefinition && (
+          <div className="space-y-1">
+            <p className="text-sm text-muted-foreground">
+              {topDefinition.body.length > 100 
+                ? `${topDefinition.body.substring(0, 100)}...` 
+                : topDefinition.body}
+            </p>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>
+                By {topDefinition.author.name || topDefinition.author.email || 'Anonymous'}
               </span>
-              votes
-            </span>
+              <span className="flex items-center gap-1">
+                <span className={topDefinition.score >= 0 ? "text-green-600" : "text-red-600"}>
+                  {topDefinition.score > 0 ? '+' : ''}{topDefinition.score}
+                </span>
+                votes
+              </span>
+            </div>
           </div>
-        </div>
-      )}
-    </article>
+        )}
+      </article>
+    </Link>
   );
 }

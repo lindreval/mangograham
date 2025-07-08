@@ -181,9 +181,11 @@ export default async function Home() {
   return (
     <main className="mx-auto flex max-w-6xl gap-6 p-4">
       <LanguageSidebar languages={languages} />
-      <section className="flex-1 space-y-4">
+      <section className="flex-1">
         {phrases.map((p) => (
-          <PhraseCard key={p.id} phrase={p} />
+          <div key={p.id} className="mb-6">
+            <PhraseCard phrase={p} />
+          </div>
         ))}
       </section>
     </main>

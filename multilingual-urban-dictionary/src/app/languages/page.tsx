@@ -16,22 +16,20 @@ export default async function LanguagesPage() {
 
       <ul className="grid grid-cols-2 gap-4 md:grid-cols-3">
         {languages.map((l) => (
-          <li
-            key={l.id}
-            id={l.isoCode}
-            className="rounded-lg border p-3 shadow-sm hover:bg-accent"
-          >
-            <div className="font-medium"><Link
-              href={`/${l.isoCode}`}
-              className="hover:underline"
+          <Link href={`/${l.isoCode}`} >
+            <li
+              key={l.id}
+              id={l.isoCode}
+              className="rounded-lg border p-3 shadow-sm hover:bg-accent"
             >
-              {l.name}
-            </Link>
-            </div>
-            <div className="text-xs text-muted-foreground">
-              {l._count.phrases} phrases
-            </div>
-          </li>
+              <div className="font-medium">
+                {l.name}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {l._count.phrases} phrases
+              </div>
+            </li>
+          </ Link>
         ))}
       </ul>
     </main>
