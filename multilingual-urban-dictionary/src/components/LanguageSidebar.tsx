@@ -13,7 +13,7 @@ export default function LanguageSidebar({ languages }: Props) {
         {languages.map((lang) => (
           <li key={lang.id}>
             <Link
-              href={`/languages#${lang.isoCode}`}
+              href={`/${lang.isoCode}`}
               className="hover:underline"
             >
               {lang.name}
