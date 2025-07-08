@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import VoteButtons from "@/components/VoteButtons";
+import { getServerSession } from "next-auth";
+import { authConfig } from "@/lib/auth";
 
 export async function generateMetadata({
   params,
@@ -30,6 +32,10 @@ export default async function PhrasePage({
   const id = parseInt(slugId.split("-").pop()!);
   
   if (isNaN(id)) return notFound();
+
+  // Get current user session
+  const session = await getServerSession(authConfig);
+  const userId = session?.user?.id;
 
   const phrase = await prisma.phrase.findUnique({
     where: { id },
@@ -62,37 +68,49 @@ export default async function PhrasePage({
         <p className="text-sm text-muted-foreground">No approved definitions yet.</p>
       ) : (
         <ul className="space-y-4">
-          {phrase.definitions.map((def) => (
-            <li key={def.id} className="rounded border p-4 space-y-2">
-              <p className="mb-1">{def.body}</p>
-              {/* ✅ Voting for Definition */}
-              <VoteButtons
-                score={def.votes.reduce((sum, v) => sum + v.value, 0)}
-                type="definition"
-                id={def.id}
-              />
-              {def.pronunciation && (
-                <p className="text-sm text-muted-foreground">
-                  Pronunciation: {def.pronunciation}
-                </p>
-              )}
-              {def.examples.length > 0 && (
-                <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
-                  {def.examples.map((ex) => (
-                    <li key={ex.id} className="flex items-center justify-between">
-                      <span>– {ex.text}</span>
-                      {/* ✅ Voting for Example */}
-                      <VoteButtons
-                        score={ex.votes.reduce((sum, v) => sum + v.value, 0)}
-                        type="example"
-                        id={ex.id}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </li>
-          ))}
+          {phrase.definitions.map((def) => {
+            // Find current user's vote on this definition
+            const userVote = userId ? def.votes.find(v => v.userId === userId) : null;
+            
+            return (
+              <li key={def.id} className="rounded border p-4 space-y-2">
+                <p className="mb-1">{def.body}</p>
+                {/* ✅ Voting for Definition */}
+                <VoteButtons
+                  score={def.votes.reduce((sum, v) => sum + v.value, 0)}
+                  type="definition"
+                  id={def.id}
+                  userVote={userVote?.value || null}
+                />
+                {def.pronunciation && (
+                  <p className="text-sm text-muted-foreground">
+                    Pronunciation: {def.pronunciation}
+                  </p>
+                )}
+                {def.examples.length > 0 && (
+                  <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
+                    {def.examples.map((ex) => {
+                      // Find current user's vote on this example
+                      const userExampleVote = userId ? ex.votes.find(v => v.userId === userId) : null;
+                      
+                      return (
+                        <li key={ex.id} className="flex items-center justify-between">
+                          <span>– {ex.text}</span>
+                          {/* ✅ Voting for Example */}
+                          <VoteButtons
+                            score={ex.votes.reduce((sum, v) => sum + v.value, 0)}
+                            type="example"
+                            id={ex.id}
+                            userVote={userExampleVote?.value || null}
+                          />
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </main>
