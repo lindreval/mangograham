@@ -1,39 +1,49 @@
+// components/VoteButtons.tsx
 "use client";
 
-import { useState } from "react";
+import { useTransition } from "react";
+import { voteOnDefinition, voteOnExample } from "@/app/actions/vote";
 
 export default function VoteButtons({
   score,
-  onVote,
-  disabled,
+  type,
+  id,
 }: {
   score: number;
-  onVote: (value: number) => void;
-  disabled?: boolean;
+  type: "definition" | "example";
+  id: number;
 }) {
-  const [loading, setLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
-  async function handleVote(value: number) {
-    if (disabled || loading) return;
-    setLoading(true);
-    await onVote(value);
-    setLoading(false);
-  }
+  const handleVote = (value: number) => {
+    startTransition(async () => {
+      try {
+        if (type === "definition") {
+          await voteOnDefinition(id, value);
+        } else {
+          await voteOnExample(id, value);
+        }
+      } catch (error) {
+        console.error("Vote error:", error);
+        alert(`Error voting: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    });
+  };
 
   return (
     <div className="flex items-center gap-2">
       <button
+        disabled={isPending}
         onClick={() => handleVote(1)}
-        disabled={disabled || loading}
-        className="px-2 py-1 text-green-600"
+        className="disabled:opacity-50 hover:bg-gray-100 p-1 rounded"
       >
         👍
       </button>
-      <span className="text-sm">{score}</span>
+      <span className="text-sm font-medium">{score}</span>
       <button
+        disabled={isPending}
         onClick={() => handleVote(-1)}
-        disabled={disabled || loading}
-        className="px-2 py-1 text-red-600"
+        className="disabled:opacity-50 hover:bg-gray-100 p-1 rounded"
       >
         👎
       </button>
