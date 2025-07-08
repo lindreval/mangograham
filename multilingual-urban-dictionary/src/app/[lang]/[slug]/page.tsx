@@ -78,6 +78,11 @@ export default async function PhrasePage({
           <p className="text-muted-foreground">
             Language: {phrase.language.name}
           </p>
+          {phrase.pronunciation && (
+            <p className="text-sm text-muted-foreground">
+              Pronunciation: {phrase.pronunciation}
+            </p>
+          )}
         </div>
         {userId && (
           <Link
@@ -112,11 +117,6 @@ export default async function PhrasePage({
                   id={def.id}
                   userVote={userVote?.value || null}
                 />
-                {def.pronunciation && (
-                  <p className="text-sm text-muted-foreground">
-                    Pronunciation: {def.pronunciation}
-                  </p>
-                )}
                 <div className="mt-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-medium text-muted-foreground">

@@ -166,6 +166,7 @@ async function main() {
         normalized: 'guey',
         slug: 'guey',
         partOfSpeech: 'noun',
+        pronunciation: '/ˈɡwei/',
         languageId: spanish.id,
       },
     }),
@@ -175,6 +176,7 @@ async function main() {
         normalized: 'pinche',
         slug: 'pinche',
         partOfSpeech: 'adjective',
+        pronunciation: '/ˈpint͡ʃe/',
         languageId: spanish.id,
       },
     }),
@@ -184,6 +186,7 @@ async function main() {
         normalized: 'churro',
         slug: 'churro',
         partOfSpeech: 'noun',
+        pronunciation: '/ˈt͡ʃuro/',
         languageId: spanish.id,
       },
     }),
@@ -193,6 +196,7 @@ async function main() {
         normalized: 'fresa',
         slug: 'fresa',
         partOfSpeech: 'noun',
+        pronunciation: '/ˈfresa/',
         languageId: spanish.id,
       },
     }),
@@ -215,6 +219,7 @@ async function main() {
         normalized: 'petmalu',
         slug: 'petmalu',
         partOfSpeech: 'adjective',
+        pronunciation: '/ˈpetmalu/',
         languageId: tagalog.id,
       },
     }),
@@ -224,6 +229,7 @@ async function main() {
         normalized: 'ghosting',
         slug: 'ghosting',
         partOfSpeech: 'verb',
+        pronunciation: '/ˈɡoʊstɪŋ/',
         languageId: tagalog.id,
       },
     }),
@@ -233,6 +239,7 @@ async function main() {
         normalized: 'pa fall',
         slug: 'pa-fall',
         partOfSpeech: 'verb',
+        pronunciation: '/pa fal/',
         languageId: tagalog.id,
       },
     }),
@@ -242,6 +249,7 @@ async function main() {
         normalized: 'werpa',
         slug: 'werpa',
         partOfSpeech: 'interjection',
+        pronunciation: '/ˈwerpa/',
         languageId: tagalog.id,
       },
     }),
@@ -251,6 +259,7 @@ async function main() {
         normalized: 'beshie',
         slug: 'beshie',
         partOfSpeech: 'noun',
+        pronunciation: '/ˈbɛʃi/',
         languageId: tagalog.id,
       },
     }),
@@ -264,6 +273,7 @@ async function main() {
         normalized: '대박',
         slug: 'daebak',
         partOfSpeech: 'interjection',
+        pronunciation: '/tæˈbak/',
         languageId: korean.id,
       },
     }),
@@ -273,6 +283,7 @@ async function main() {
         normalized: '썸타다',
         slug: 'sseomtada',
         partOfSpeech: 'verb',
+        pronunciation: '/sʌəmˈtʰada/',
         languageId: korean.id,
       },
     }),
@@ -282,6 +293,7 @@ async function main() {
         normalized: '엄친아',
         slug: 'eomchina',
         partOfSpeech: 'noun',
+        pronunciation: '/ʌəmˈt͡ʃʰina/',
         languageId: korean.id,
       },
     }),
@@ -291,6 +303,7 @@ async function main() {
         normalized: '헬조선',
         slug: 'heljoseon',
         partOfSpeech: 'noun',
+        pronunciation: '/hælˈt͡ʃoson/',
         languageId: korean.id,
       },
     }),
@@ -300,6 +313,7 @@ async function main() {
         normalized: '갑분싸',
         slug: 'gapbunsssa',
         partOfSpeech: 'expression',
+        pronunciation: '/kapˈbunsʃa/',
         languageId: korean.id,
       },
     }),
@@ -312,7 +326,6 @@ async function main() {
     prisma.definition.create({
       data: {
         body: 'Dude, guy, buddy - casual way to address someone',
-        pronunciation: '/ˈɡwei/',
         mediaUrl: 'https://example.com/guey-pronunciation.mp3',
         authorId: users[0].id,
         phraseId: spanishPhrases[0].id,
@@ -322,7 +335,6 @@ async function main() {
     prisma.definition.create({
       data: {
         body: 'Damn, fucking - intensifier used before nouns or adjectives',
-        pronunciation: '/ˈpint͡ʃe/',
         authorId: users[1].id,
         phraseId: spanishPhrases[1].id,
         status: 'approved',
@@ -331,7 +343,6 @@ async function main() {
     prisma.definition.create({
       data: {
         body: 'Attractive person, hottie - someone who is good-looking',
-        pronunciation: '/ˈt͡ʃuro/',
         authorId: users[2].id,
         phraseId: spanishPhrases[2].id,
         status: 'approved',
@@ -340,7 +351,6 @@ async function main() {
     prisma.definition.create({
       data: {
         body: 'Preppy, posh person - someone from upper class who acts snobbish',
-        pronunciation: '/ˈfresa/',
         authorId: users[3].id,
         phraseId: spanishPhrases[3].id,
         status: 'approved',
@@ -349,7 +359,6 @@ async function main() {
     prisma.definition.create({
       data: {
         body: 'To be awesome, cool, or difficult - depends on context',
-        pronunciation: '/esˈtar kaˈɲon/',
         authorId: users[4].id,
         phraseId: spanishPhrases[4].id,
         status: 'approved',
@@ -362,7 +371,6 @@ async function main() {
     prisma.definition.create({
       data: {
         body: 'Awesome, cool, amazing - positive slang for something impressive',
-        pronunciation: '/ˈpetmalu/',
         authorId: users[5].id,
         phraseId: tagalogPhrases[0].id,
         status: 'approved',
@@ -371,7 +379,6 @@ async function main() {
     prisma.definition.create({
       data: {
         body: 'Suddenly cutting off communication without explanation',
-        pronunciation: '/ˈɡoʊstɪŋ/',
         authorId: users[6].id,
         phraseId: tagalogPhrases[1].id,
         status: 'approved',
@@ -380,7 +387,6 @@ async function main() {
     prisma.definition.create({
       data: {
         body: 'To make someone fall in love, to seduce',
-        pronunciation: '/pa fal/',
         authorId: users[7].id,
         phraseId: tagalogPhrases[2].id,
         status: 'approved',
@@ -389,7 +395,6 @@ async function main() {
     prisma.definition.create({
       data: {
         body: 'Expression of amazement or excitement, like "wow"',
-        pronunciation: '/ˈwerpa/',
         authorId: users[8].id,
         phraseId: tagalogPhrases[3].id,
         status: 'approved',
@@ -398,7 +403,6 @@ async function main() {
     prisma.definition.create({
       data: {
         body: 'Best friend, bestie - close friend',
-        pronunciation: '/ˈbɛʃi/',
         authorId: users[9].id,
         phraseId: tagalogPhrases[4].id,
         status: 'approved',
@@ -411,7 +415,6 @@ async function main() {
     prisma.definition.create({
       data: {
         body: 'Awesome, amazing, jackpot - expression of excitement',
-        pronunciation: '/tɛˈbak/',
         authorId: users[0].id,
         phraseId: koreanPhrases[0].id,
         status: 'approved',
@@ -420,7 +423,6 @@ async function main() {
     prisma.definition.create({
       data: {
         body: 'To have a "some" relationship - more than friends but not dating',
-        pronunciation: '/sʌmˈtʰada/',
         authorId: users[1].id,
         phraseId: koreanPhrases[1].id,
         status: 'approved',
@@ -429,7 +431,6 @@ async function main() {
     prisma.definition.create({
       data: {
         body: 'Perfect son that mothers brag about - abbreviated from "엄마 친구 아들"',
-        pronunciation: '/ʌmˈt͡ʃʰina/',
         authorId: users[2].id,
         phraseId: koreanPhrases[2].id,
         status: 'approved',
@@ -438,7 +439,6 @@ async function main() {
     prisma.definition.create({
       data: {
         body: 'Hell Korea - criticizing difficult living conditions in Korea',
-        pronunciation: '/hɛlˈt͡ʃoson/',
         authorId: users[3].id,
         phraseId: koreanPhrases[3].id,
         status: 'approved',
@@ -447,7 +447,6 @@ async function main() {
     prisma.definition.create({
       data: {
         body: 'Suddenly awkward atmosphere - when mood becomes uncomfortable',
-        pronunciation: '/kapˈbunsʰa/',
         authorId: users[4].id,
         phraseId: koreanPhrases[4].id,
         status: 'approved',

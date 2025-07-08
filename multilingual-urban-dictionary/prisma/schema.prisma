@@ -20,6 +20,7 @@ model Phrase {
   normalized   String       @db.VarChar(255)
   slug         String       @unique
   partOfSpeech String?
+  pronunciation String?
   languageId   Int
   createdAt    DateTime     @default(now())
   definitions  Definition[]
@@ -30,18 +31,17 @@ model Phrase {
 }
 
 model Definition {
-  id            Int              @id @default(autoincrement())
-  body          String
-  pronunciation String?
-  mediaUrl      String?
-  authorId      String
-  phraseId      Int
-  status        String           @default("pending")
-  createdAt     DateTime         @default(now())
-  author        User             @relation("UserDefinitions", fields: [authorId], references: [id])
-  phrase        Phrase           @relation(fields: [phraseId], references: [id])
-  votes         DefinitionVote[]
-  examples      Example[]
+  id        Int              @id @default(autoincrement())
+  body      String
+  mediaUrl  String?
+  authorId  String
+  phraseId  Int
+  status    String           @default("pending")
+  createdAt DateTime         @default(now())
+  author    User             @relation("UserDefinitions", fields: [authorId], references: [id])
+  phrase    Phrase           @relation(fields: [phraseId], references: [id])
+  votes     DefinitionVote[]
+  examples  Example[]
 }
 
 model Example {
