@@ -16,9 +16,8 @@ export default async function LanguagesPage() {
 
       <ul className="grid grid-cols-2 gap-4 md:grid-cols-3">
         {languages.map((l) => (
-          <Link href={`/${l.isoCode}`} >
+          <Link key={l.id} href={`/${l.isoCode}`}>
             <li
-              key={l.id}
               id={l.isoCode}
               className="rounded-lg border p-3 shadow-sm hover:bg-accent"
             >
@@ -29,7 +28,7 @@ export default async function LanguagesPage() {
                 {l._count.phrases} phrases
               </div>
             </li>
-          </ Link>
+          </Link>
         ))}
       </ul>
     </main>
