@@ -50,6 +50,7 @@ model Example {
   translation  String?
   authorId     String
   definitionId Int
+  status       String        @default("approved")
   createdAt    DateTime      @default(now())
   author       User          @relation("UserExamples", fields: [authorId], references: [id])
   definition   Definition    @relation(fields: [definitionId], references: [id], onDelete: Cascade)

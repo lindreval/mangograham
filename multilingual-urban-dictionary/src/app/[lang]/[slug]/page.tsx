@@ -5,6 +5,7 @@ import VoteButtons from "@/components/VoteButtons";
 import { getServerSession } from "next-auth";
 import { authConfig } from "@/lib/auth";
 import Link from "next/link";
+import FlagButton from "@/components/FlagButton";
 
 export async function generateMetadata({
   params,
@@ -43,6 +44,7 @@ export default async function PhrasePage({
         include: {
           author: true, // Include definition author
           examples: {
+            where: { status: {in: ["approved", "pending"],} },
             include: {
               votes: true, // This gets ExampleVote[]
               author: true, // Include example author
@@ -111,12 +113,15 @@ export default async function PhrasePage({
                   </time>
                 </div>
                 {/* ✅ Voting for Definition */}
-                <VoteButtons
-                  score={def.votes.reduce((sum, v) => sum + v.value, 0)}
-                  type="definition"
-                  id={def.id}
-                  userVote={userVote?.value || null}
-                />
+                <div className="flex items-center justify-between">
+                  <VoteButtons
+                    score={def.votes.reduce((sum, v) => sum + v.value, 0)}
+                    type="definition"
+                    id={def.id}
+                    userVote={userVote?.value || null}
+                  />
+                  <FlagButton definitionId={def.id} />
+                </div>
                 <div className="mt-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-medium text-muted-foreground">
@@ -152,12 +157,15 @@ export default async function PhrasePage({
                                 {ex.createdAt.toLocaleDateString()}
                               </time>
                             </div>
-                            <VoteButtons
-                              score={ex.votes.reduce((sum, v) => sum + v.value, 0)}
-                              type="example"
-                              id={ex.id}
-                              userVote={userExampleVote?.value || null}
-                            />
+                            <div className="flex items-center gap-2">
+                              <VoteButtons
+                                score={ex.votes.reduce((sum, v) => sum + v.value, 0)}
+                                type="example"
+                                id={ex.id}
+                                userVote={userExampleVote?.value || null}
+                              />
+                              <FlagButton exampleId={ex.id} />
+                            </div>
                           </div>
                         </div>
                       );
