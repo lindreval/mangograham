@@ -58,6 +58,7 @@ import "./globals.css";
 import Providers from "./providers";
 import NavBar from "@/components/NavBar";
 import { Suspense } from "react";
+import { Analytics  } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "Yung Salita",
@@ -77,6 +78,7 @@ export default function RootLayout({
     >
       {/* ② Apply the GeistSans variable via Tailwind’s font-sans utility */}
       <body className="min-h-screen font-sans antialiased">
+        <Analytics />
         <Providers>
           {/* ③ Wrap your client-only NavBar in Suspense */}
           <Suspense fallback={null}>

@@ -1,4 +1,5 @@
 // src/app/languages/page.tsx
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 
 export const revalidate = 300; // 5-min ISR
@@ -20,7 +21,13 @@ export default async function LanguagesPage() {
             id={l.isoCode}
             className="rounded-lg border p-3 shadow-sm hover:bg-accent"
           >
-            <div className="font-medium">{l.name}</div>
+            <div className="font-medium"><Link
+              href={`/${l.isoCode}`}
+              className="hover:underline"
+            >
+              {l.name}
+            </Link>
+            </div>
             <div className="text-xs text-muted-foreground">
               {l._count.phrases} phrases
             </div>
