@@ -109,7 +109,7 @@ export default function TermsPage() {
         <section className="mb-8">
           <h2 className="text-2xl font-semibold mb-4">7. Limitation of Liability</h2>
           <p>
-            To the fullest extent permitted by law, Yung Salita, LLC is not liable for any damages arising from your 
+            To the fullest extent permitted by law, Valsote Productions, LLC is not liable for any damages arising from your 
             use of the Site, including but not limited to loss of data, profits, or reputation.
           </p>
         </section>
