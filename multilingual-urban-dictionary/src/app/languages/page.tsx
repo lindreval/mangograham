@@ -19,7 +19,7 @@ export default async function LanguagesPage() {
           <Link key={l.id} href={`/${l.isoCode}`}>
             <li
               id={l.isoCode}
-              className="rounded-lg border-2 p-3 shadow-sm hover:bg-accent"
+              className="rounded-lg border-2 p-3 bg-background shadow-sm transition-transform duration-300 hover:scale-102 hover:bg-accent shadow-elevation-medium hover:shadow-elevation-high transition-shadow cursor-pointer"
             >
               <div className="font-medium">
                 {l.name}

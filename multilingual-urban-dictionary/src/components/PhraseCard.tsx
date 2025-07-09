@@ -34,7 +34,7 @@ export default function PhraseCard({ phrase }: { phrase: PhraseWithLang }) {
 
   return (
     <Link href={`/${phrase.language.isoCode}/${phrase.slug}`}>
-      <article className="rounded-lg border-4 bg-card text-card-foreground p-4 shadow-elevation-medium hover:shadow-elevation-high transition-shadow cursor-pointer">
+      <article className="rounded-lg border-4 bg-card text-card-foreground p-4 shadow-elevation-medium hover:bg-accent hover:shadow-elevation-high transition-shadow cursor-pointer">
         <header className="mb-3 flex items-center justify-between">
           <span className="text-base text-muted-foreground">
             {phrase.language.name}
