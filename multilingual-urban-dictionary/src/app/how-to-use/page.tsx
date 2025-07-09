@@ -54,7 +54,7 @@ export default function HowToUsePage() {
               <li>Keep definitions clear, accurate, and culturally sensitive</li>
               <li>Provide context and examples whenever possible to help users understand nuance</li>
               <li>Be respectful of all cultures and languages</li>
-              <li>Flag content that's harmful, incorrect, or violates community standards to help maintain quality</li>
+              <li>Flag content that&apos;s harmful, incorrect, or violates community standards to help maintain quality</li>
             </ul>
           </div>
         </section>

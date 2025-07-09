@@ -41,8 +41,8 @@ export default function AboutPage() {
           <div className="max-w-none">
             <p className="text-card-foreground/80">
               &ldquo;Yung Salita&rdquo; comes from Tagalog, meaning &ldquo;those words&rdquo; or &ldquo;the words.&rdquo; 
-              It captures what we're trying to accomplish: preserving and shining a spotlight on the words that matter to 
-              communities, language that connects and tells stories. These are the words that don't make it into textbooks,
+              It captures what we&apos;re trying to accomplish: preserving and shining a spotlight on the words that matter to 
+              communities, language that connects and tells stories. These are the words that don&apos;t make it into textbooks,
               but live in group chats, music, jokes, and everyday conversation. All around the world the informal, creative, 
               and expressive language brings people together.
             </p>
