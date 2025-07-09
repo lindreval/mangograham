@@ -73,22 +73,22 @@ export default async function PhrasePage({
   if (!phrase || phrase.language.isoCode !== lang) return notFound();
 
   return (
-    <main className="mx-auto max-w-3xl p-6 space-y-6">
-      <div className="flex items-start justify-between">
-        <div className="rounded-lg border-4 bg-card text-card-foreground p-4 shadow-elevation-medium">
-          <h1 className="text-3xl font-bold text-foreground">
+    <main className="mx-auto max-w-4xl p-4 md:p-6 space-y-4 md:space-y-6">
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+        <div className="flex-1 rounded-lg border-4 bg-card text-card-foreground p-4 md:p-6 shadow-elevation-medium">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground break-words">
             {phrase.textOriginal}
             {phrase.transliteration && (
-              <span className="ml-3 text-xl text-muted-foreground font-normal">
+              <span className="block md:inline md:ml-3 text-lg md:text-xl text-muted-foreground font-normal mt-1 md:mt-0">
                 ({phrase.transliteration})
               </span>
             )}
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm md:text-base text-muted-foreground mt-2">
             Language: {phrase.language.name}
           </p>
           {phrase.pronunciation && (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs md:text-sm text-muted-foreground mt-1">
               Pronunciation: {phrase.pronunciation}
             </p>
           )}
@@ -96,7 +96,7 @@ export default async function PhrasePage({
         {userId && (
           <Link
             href={`/submit?phrase=${encodeURIComponent(phrase.textOriginal)}&languageId=${phrase.languageId}`}
-            className="rounded bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90 font-bold"
+            className="w-full md:w-auto md:flex-shrink-0 rounded bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90 font-bold text-center transition-colors"
           >
             + New Definition
           </Link>
@@ -111,9 +111,9 @@ export default async function PhrasePage({
             const userVote = userId ? def.votes.find(v => v.userId === userId) : null;
             
             return (
-              <li key={def.id} className="rounded-lg border-4 bg-card text-card-foreground p-4 space-y-3 shadow-elevation-medium">
-                <p className="mb-1 text-card-foreground">{def.body}</p>
-                <div className="flex items-center justify-between text-xs text-card-foreground/70">
+              <li key={def.id} className="rounded-lg border-4 bg-card text-card-foreground p-4 md:p-6 space-y-3 md:space-y-4 shadow-elevation-medium">
+                <p className="mb-1 text-sm md:text-base text-card-foreground leading-relaxed">{def.body}</p>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs md:text-sm text-card-foreground/70">
                   <span>
                     By {def.author.username ? (
                       <Link href={`/user/${def.author.username}`} className="text-[var(--primary)] hover:underline">
@@ -128,7 +128,7 @@ export default async function PhrasePage({
                   </time>
                 </div>
                 {/* ✅ Voting for Definition */}
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <VoteButtons
                     score={def.votes.reduce((sum, v) => sum + v.value, 0)}
                     type="definition"
@@ -138,14 +138,14 @@ export default async function PhrasePage({
                   <FlagButton definitionId={def.id} />
                 </div>
                 <div className="mt-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-medium text-card-foreground/80">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <h4 className="text-sm md:text-base font-medium text-card-foreground/80">
                       Examples{def.examples.length > 0 ? `:` : ''}
                     </h4>
                     {userId && (
                       <Link
                         href={`/submit?phrase=${encodeURIComponent(phrase.textOriginal)}&languageId=${phrase.languageId}&definition=${encodeURIComponent(def.body)}&definitionId=${def.id}`}
-                        className="rounded bg-primary px-3 py-1 text-sm text-primary-foreground hover:bg-primary/80 font-bold"
+                        className="w-full sm:w-auto rounded bg-primary px-3 py-1 text-xs md:text-sm text-primary-foreground hover:bg-primary/80 font-bold text-center transition-colors"
                       >
                         + Add Example
                       </Link>
@@ -158,15 +158,15 @@ export default async function PhrasePage({
                       const userExampleVote = userId ? ex.votes.find(v => v.userId === userId) : null;
                       
                       return (
-                        <div key={ex.id} className="rounded-lg border-2 bg-secondary/30 text-secondary-foreground p-3 space-y-2 shadow-sm">
-                          <p className="text-sm italic text-secondary-foreground">&ldquo;{ex.text}&rdquo;</p>
+                        <div key={ex.id} className="rounded-lg border-2 bg-secondary/30 text-secondary-foreground p-3 md:p-4 space-y-2 md:space-y-3 shadow-sm">
+                          <p className="text-sm md:text-base italic text-secondary-foreground leading-relaxed">&ldquo;{ex.text}&rdquo;</p>
                           {ex.translation && (
-                            <p className="text-xs text-secondary-foreground/70">
+                            <p className="text-xs md:text-sm text-secondary-foreground/70">
                               Translation: {ex.translation}
                             </p>
                           )}
-                          <div className="flex items-center justify-between">
-                            <div className="flex flex-col text-xs text-secondary-foreground/70">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div className="flex flex-col text-xs md:text-sm text-secondary-foreground/70">
                               <span>
                                 By {ex.author.username ? (
                                   <Link href={`/user/${ex.author.username}`} className="text-[var(--primary)] hover:underline">
