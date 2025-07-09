@@ -77,7 +77,7 @@ export default async function SearchPage({
           </Link>
         </p>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-4 transition-transform duration-300 hover:scale-102">
           {results.map((phrase) => (
             <PhraseCard key={phrase.id} phrase={phrase} />
           ))}
