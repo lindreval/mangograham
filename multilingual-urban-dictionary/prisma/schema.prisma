@@ -57,7 +57,7 @@ model Example {
   translation  String?
   authorId     String
   definitionId Int
-  status       String        @default("approved")
+  status       String        @default("pending")
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   author       User          @relation("UserExamples", fields: [authorId], references: [id])
