@@ -135,7 +135,7 @@
 
 import { prisma } from "@/lib/prisma";
 import LanguageSidebar from "@/components/LanguageSidebar";
-import PhraseCard from "@/components/PhraseCard";
+import InfiniteScrollPhrases from "@/components/InfiniteScrollPhrases";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -197,13 +197,7 @@ export default async function Home() {
     <main className="mx-auto max-w-6xl p-4">
       <div className="md:flex md:gap-6">
         <LanguageSidebar languages={languages} />
-        <section className="flex-1">
-          {phrases.map((p) => (
-            <div key={p.id} className="mb-6 transition-transform duration-300 hover:scale-102">
-              <PhraseCard phrase={p} />
-            </div>
-          ))}
-        </section>
+        <InfiniteScrollPhrases initialPhrases={phrases} />
       </div>
     </main>
   );
