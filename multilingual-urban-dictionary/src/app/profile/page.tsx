@@ -10,6 +10,12 @@ import EditProfileModal from "@/components/EditProfileModal";
 import SortableContributions from "@/components/SortableContributions";
 import { calculateUserReputation, getReputationLevel } from "@/lib/reputation";
 import ReputationInfo from "@/components/ReputationInfo";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "My Profile",
+  description: "View and edit your profile, contributions, and reputation",
+};
 
 export default async function ProfilePage() {
   const session = await getServerSession(authConfig);

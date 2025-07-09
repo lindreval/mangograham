@@ -5,6 +5,12 @@ import { redirect } from "next/navigation";
 import type { Session } from "next-auth";
 import SubmitForm from "./SubmitForm";
 import { Suspense } from "react";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Submit",
+  description: "Submit new phrases, definitions, and examples to the dictionary",
+};
 
 // ✅ Add this
 interface CustomSession extends Session {

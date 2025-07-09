@@ -3,10 +3,35 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import PhraseCard from "@/components/PhraseCard";
+import type { Metadata } from "next";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
 export const revalidate = 30;
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}): Promise<Metadata> {
+  const params = await searchParams;
+  const raw = params.q;
+  const query = Array.isArray(raw)
+    ? raw[0]?.trim() ?? ""
+    : raw?.trim() ?? "";
+
+  if (!query) {
+    return {
+      title: "Search",
+      description: "Search for slang and phrases",
+    };
+  }
+
+  return {
+    title: `Search: "${query}"`,
+    description: `Search results for "${query}" - Find slang definitions and phrases`,
+  };
+}
 
 export default async function SearchPage({
   searchParams,

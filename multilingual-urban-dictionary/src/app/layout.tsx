@@ -61,7 +61,10 @@ import { Suspense } from "react";
 import { Analytics  } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
-  title: "Yung Salita",
+  title: {
+    template: "%s | Yung Salita",
+    default: "Yung Salita - The Global Urban Dictionary",
+  },
   description: "Crowdsourced slang across languages",
 };
 

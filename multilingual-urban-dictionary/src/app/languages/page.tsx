@@ -1,6 +1,12 @@
 // src/app/languages/page.tsx
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Languages",
+  description: "Browse all supported languages and their slang phrases",
+};
 
 export const revalidate = 300; // 5-min ISR
 

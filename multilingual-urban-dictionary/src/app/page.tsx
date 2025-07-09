@@ -133,10 +133,15 @@
 //   );
 // }
 
-//import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import LanguageSidebar from "@/components/LanguageSidebar";
 import PhraseCard from "@/components/PhraseCard";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Home",
+  description: "Discover the latest slang and phrases from languages around the world",
+};
 
 export const revalidate = 60; // ISR – re-render at most once per minute
 
