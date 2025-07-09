@@ -193,7 +193,7 @@ export default async function Home() {
       <LanguageSidebar languages={languages} />
       <section className="flex-1">
         {phrases.map((p) => (
-          <div key={p.id} className="mb-6">
+          <div key={p.id} className="mb-6 transition-transform duration-300 hover:scale-102">
             <PhraseCard phrase={p} />
           </div>
         ))}

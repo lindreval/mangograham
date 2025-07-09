@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import PhraseCard from "@/components/PhraseCard";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -22,17 +23,38 @@ export default async function SearchPage({
   if (!query) notFound();
 
   const results = await prisma.phrase.findMany({
-    where: { normalized: { contains: query.toLowerCase() } },
+    where: {
+      OR: [
+        { normalized: { contains: query.toLowerCase() } },
+        { transliteration: { contains: query.toLowerCase() } }
+      ]
+    },
     take: 50,
     orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      textOriginal: true,
-      slug: true,
+    include: {
       language: {
         select: {
+          id: true,
           name: true,
           isoCode: true,
+        },
+      },
+      definitions: {
+        where: { status: { in: ["approved", "pending"] } },
+        include: {
+          votes: true,
+          author: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+          examples: {
+            where: { status: { in: ["approved", "pending"] } },
+            include: {
+              votes: true,
+            },
+          },
         },
       },
     },
@@ -55,21 +77,11 @@ export default async function SearchPage({
           </Link>
         </p>
       ) : (
-        <ul className="space-y-3">
-          {results.map((p) => (
-            <li key={p.id} className="rounded border p-3">
-              <Link
-                href={`/${p.language.isoCode}/${p.slug}`}
-                className="font-medium hover:underline"
-              >
-                {p.textOriginal}
-              </Link>
-              <span className="ml-2 text-sm text-muted-foreground">
-                {p.language.name}
-              </span>
-            </li>
+        <div className="space-y-4">
+          {results.map((phrase) => (
+            <PhraseCard key={phrase.id} phrase={phrase} />
           ))}
-        </ul>
+        </div>
       )}
     </main>
   );

@@ -92,36 +92,38 @@ export default async function ProfilePage() {
   const joinDate = userData.createdAt;
 
   return (
-    <main className="mx-auto max-w-6xl p-6 space-y-8">
+    <main className="mx-auto max-w-6xl p-4 md:p-6 space-y-6 md:space-y-8">
       {/* Enhanced User Info Section */}
       <Card className="border-4 shadow-elevation-medium">
-        <CardContent className="pt-6">
-          <div className="flex items-start gap-6">
+        <CardContent className="pt-4 md:pt-6">
+          <div className="flex flex-col sm:flex-row items-start gap-4 md:gap-6">
             {userData.image && (
               <Image 
                 src={userData.image} 
                 alt={userData.name || "User avatar"} 
                 width={80}
                 height={80}
-                className="w-20 h-20 rounded-full border-2 border-primary/20"
+                className="w-16 h-16 md:w-20 md:h-20 rounded-full border-2 border-primary/20 mx-auto sm:mx-0"
               />
             )}
-            <div className="flex-1">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
-                  <h1 className="text-3xl font-bold">{userData.name || "Anonymous User"}</h1>
-                  <Badge className={`${reputationLevel.color} text-white`}>
+            <div className="flex-1 w-full text-center sm:text-left">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                  <h1 className="text-2xl md:text-3xl font-bold">{userData.name || "Anonymous User"}</h1>
+                  <Badge className={`${reputationLevel.color} text-white self-center sm:self-auto`}>
                     <Trophy className="w-3 h-3 mr-1" />
                     {reputationLevel.level}
                   </Badge>
                 </div>
-                <EditProfileModal user={{
-                  name: userData.name,
-                  username: userData.username,
-                  bio: userData.bio,
-                  location: userData.location,
-                  languagesSpoken: userData.languagesSpoken
-                }} />
+                <div className="self-center sm:self-auto">
+                  <EditProfileModal user={{
+                    name: userData.name,
+                    username: userData.username,
+                    bio: userData.bio,
+                    location: userData.location,
+                    languagesSpoken: userData.languagesSpoken
+                  }} />
+                </div>
               </div>
               
               {userData.username && (
@@ -132,7 +134,7 @@ export default async function ProfilePage() {
                 <p className="text-muted-foreground mb-3">{userData.bio}</p>
               )}
               
-              <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+              <div className="flex flex-wrap justify-center sm:justify-start gap-3 md:gap-4 text-xs md:text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <CalendarDays className="w-4 h-4" />
                   Joined {joinDate.toLocaleDateString()}
@@ -157,39 +159,39 @@ export default async function ProfilePage() {
       </Card>
 
       {/* Enhanced Stats Section */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
         <Card className="border-4 shadow-elevation-medium">
-          <CardContent className="pt-6 text-center">
-            <div className="text-2xl font-bold text-primary">{userData.phrases.length}</div>
-            <div className="text-sm text-muted-foreground">Phrases Submitted</div>
+          <CardContent className="pt-4 md:pt-6 text-center">
+            <div className="text-xl md:text-2xl font-bold text-primary">{userData.phrases.length}</div>
+            <div className="text-xs md:text-sm text-muted-foreground">Phrases Submitted</div>
           </CardContent>
         </Card>
         
         <Card className="border-4 shadow-elevation-medium">
-          <CardContent className="pt-6 text-center">
-            <div className="text-2xl font-bold text-primary">{userData.definitions.length}</div>
-            <div className="text-sm text-muted-foreground">Definitions Added</div>
+          <CardContent className="pt-4 md:pt-6 text-center">
+            <div className="text-xl md:text-2xl font-bold text-primary">{userData.definitions.length}</div>
+            <div className="text-xs md:text-sm text-muted-foreground">Definitions Added</div>
           </CardContent>
         </Card>
         
         <Card className="border-4 shadow-elevation-medium">
-          <CardContent className="pt-6 text-center">
-            <div className="text-2xl font-bold text-primary">{userData.examples.length}</div>
-            <div className="text-sm text-muted-foreground">Examples Contributed</div>
+          <CardContent className="pt-4 md:pt-6 text-center">
+            <div className="text-xl md:text-2xl font-bold text-primary">{userData.examples.length}</div>
+            <div className="text-xs md:text-sm text-muted-foreground">Examples Contributed</div>
           </CardContent>
         </Card>
         
         <Card className="border-4 shadow-elevation-medium">
-          <CardContent className="pt-6 text-center">
-            <div className="text-2xl font-bold text-green-600">{totalUpvotes}</div>
-            <div className="text-sm text-muted-foreground">Total Upvotes</div>
+          <CardContent className="pt-4 md:pt-6 text-center">
+            <div className="text-xl md:text-2xl font-bold text-green-600">{totalUpvotes}</div>
+            <div className="text-xs md:text-sm text-muted-foreground">Total Upvotes</div>
           </CardContent>
         </Card>
         
         <Card className="border-4 shadow-elevation-medium">
-          <CardContent className="pt-6 text-center">
-            <div className="text-2xl font-bold text-purple-600">{totalContributions}</div>
-            <div className="text-sm text-muted-foreground">Total Contributions</div>
+          <CardContent className="pt-4 md:pt-6 text-center">
+            <div className="text-xl md:text-2xl font-bold text-purple-600">{totalContributions}</div>
+            <div className="text-xs md:text-sm text-muted-foreground">Total Contributions</div>
           </CardContent>
         </Card>
       </div>
@@ -206,7 +208,7 @@ export default async function ProfilePage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="text-center">
               <div className="text-lg font-semibold text-blue-600">
                 {reputationData.breakdown.fromDefinitions}
@@ -227,7 +229,7 @@ export default async function ProfilePage() {
               </div>
             </div>
             
-            <div className="text-center">
+            <div className="text-center sm:col-span-2 lg:col-span-1">
               <div className="text-lg font-semibold text-purple-600">
                 {reputationData.breakdown.fromPhrases}
               </div>

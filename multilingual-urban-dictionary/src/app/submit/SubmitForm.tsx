@@ -47,8 +47,8 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
   }
 
   return (
-    <>
-      <h1 className="text-2xl font-bold">
+    <div className="rounded-lg border-4 bg-card text-card-foreground p-6 shadow-elevation-medium">
+      <h1 className="text-2xl font-bold mb-6">
         {isExistingDefinition 
           ? `Add Example for "${preFilledPhrase}"` 
           : isExistingPhrase 
@@ -214,6 +214,6 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
         {" "}and confirm that you are at least 16 years old.
       </div>
     </form>
-    </>
+    </div>
   );
 }

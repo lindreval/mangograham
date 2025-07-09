@@ -75,7 +75,7 @@ export default async function PhrasePage({
   return (
     <main className="mx-auto max-w-3xl p-6 space-y-6">
       <div className="flex items-start justify-between">
-        <div>
+        <div className="rounded-lg border-4 bg-card text-card-foreground p-4 shadow-elevation-medium">
           <h1 className="text-3xl font-bold text-foreground">
             {phrase.textOriginal}
             {phrase.transliteration && (
@@ -96,7 +96,7 @@ export default async function PhrasePage({
         {userId && (
           <Link
             href={`/submit?phrase=${encodeURIComponent(phrase.textOriginal)}&languageId=${phrase.languageId}`}
-            className="rounded bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90"
+            className="rounded bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90 font-bold"
           >
             + New Definition
           </Link>
@@ -137,7 +137,7 @@ export default async function PhrasePage({
                     {userId && (
                       <Link
                         href={`/submit?phrase=${encodeURIComponent(phrase.textOriginal)}&languageId=${phrase.languageId}&definition=${encodeURIComponent(def.body)}&definitionId=${def.id}`}
-                        className="rounded bg-secondary px-3 py-1 text-xs text-secondary-foreground hover:bg-secondary/80"
+                        className="rounded bg-primary px-3 py-1 text-sm text-primary-foreground hover:bg-primary/80 font-bold"
                       >
                         + Add Example
                       </Link>
