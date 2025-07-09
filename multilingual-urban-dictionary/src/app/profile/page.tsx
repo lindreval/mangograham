@@ -94,7 +94,7 @@ export default async function ProfilePage() {
   return (
     <main className="mx-auto max-w-6xl p-6 space-y-8">
       {/* Enhanced User Info Section */}
-      <Card>
+      <Card className="border-4 shadow-elevation-medium">
         <CardContent className="pt-6">
           <div className="flex items-start gap-6">
             {userData.image && (
@@ -158,35 +158,35 @@ export default async function ProfilePage() {
 
       {/* Enhanced Stats Section */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card>
+        <Card className="border-4 shadow-elevation-medium">
           <CardContent className="pt-6 text-center">
             <div className="text-2xl font-bold text-primary">{userData.phrases.length}</div>
             <div className="text-sm text-muted-foreground">Phrases Submitted</div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="border-4 shadow-elevation-medium">
           <CardContent className="pt-6 text-center">
             <div className="text-2xl font-bold text-primary">{userData.definitions.length}</div>
             <div className="text-sm text-muted-foreground">Definitions Added</div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="border-4 shadow-elevation-medium">
           <CardContent className="pt-6 text-center">
             <div className="text-2xl font-bold text-primary">{userData.examples.length}</div>
             <div className="text-sm text-muted-foreground">Examples Contributed</div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="border-4 shadow-elevation-medium">
           <CardContent className="pt-6 text-center">
             <div className="text-2xl font-bold text-green-600">{totalUpvotes}</div>
             <div className="text-sm text-muted-foreground">Total Upvotes</div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="border-4 shadow-elevation-medium">
           <CardContent className="pt-6 text-center">
             <div className="text-2xl font-bold text-purple-600">{totalContributions}</div>
             <div className="text-sm text-muted-foreground">Total Contributions</div>
@@ -195,7 +195,7 @@ export default async function ProfilePage() {
       </div>
 
       {/* Reputation Breakdown */}
-      <Card>
+      <Card className="border-4 shadow-elevation-medium">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Info className="w-5 h-5" />

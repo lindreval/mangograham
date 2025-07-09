@@ -158,7 +158,7 @@ export default function SortableContributions({ phrases, definitions, examples }
   );
 
   return (
-    <Card>
+    <Card className="border-4 shadow-elevation-medium">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MessageCircle className="w-5 h-5" />

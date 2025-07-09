@@ -35,7 +35,7 @@ export default function NavBar() {
             <Input
               name="q"
               type="search"
-              placeholder="Search a phrase…"
+              placeholder="Search"
               defaultValue={q}                   // ② use the hook’s value here
               className="w-full pr-10"
             />

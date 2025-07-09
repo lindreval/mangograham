@@ -76,7 +76,7 @@ export default async function PhrasePage({
     <main className="mx-auto max-w-3xl p-6 space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold">
+          <h1 className="text-3xl font-bold text-foreground">
             {phrase.textOriginal}
             {phrase.transliteration && (
               <span className="ml-3 text-xl text-muted-foreground font-normal">
@@ -96,7 +96,7 @@ export default async function PhrasePage({
         {userId && (
           <Link
             href={`/submit?phrase=${encodeURIComponent(phrase.textOriginal)}&languageId=${phrase.languageId}`}
-            className="rounded bg-primary px-4 py-2 text-sm text-white hover:bg-primary/90"
+            className="rounded bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90"
           >
             + New Definition
           </Link>
@@ -111,9 +111,9 @@ export default async function PhrasePage({
             const userVote = userId ? def.votes.find(v => v.userId === userId) : null;
             
             return (
-              <li key={def.id} className="rounded border p-4 space-y-2">
-                <p className="mb-1">{def.body}</p>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <li key={def.id} className="rounded-lg border-4 bg-card text-card-foreground p-4 space-y-3 shadow-elevation-medium">
+                <p className="mb-1 text-card-foreground">{def.body}</p>
+                <div className="flex items-center justify-between text-xs text-card-foreground/70">
                   <span>By {def.author.name || def.author.email || 'Anonymous'}</span>
                   <time dateTime={def.createdAt.toISOString()}>
                     {def.createdAt.toLocaleDateString()}
@@ -131,7 +131,7 @@ export default async function PhrasePage({
                 </div>
                 <div className="mt-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-medium text-muted-foreground">
+                    <h4 className="text-sm font-medium text-card-foreground/80">
                       Examples{def.examples.length > 0 ? `:` : ''}
                     </h4>
                     {userId && (
@@ -150,15 +150,15 @@ export default async function PhrasePage({
                       const userExampleVote = userId ? ex.votes.find(v => v.userId === userId) : null;
                       
                       return (
-                        <div key={ex.id} className="rounded border bg-muted/30 p-3 space-y-2">
-                          <p className="text-sm italic">&ldquo;{ex.text}&rdquo;</p>
+                        <div key={ex.id} className="rounded-lg border-2 bg-secondary/30 text-secondary-foreground p-3 space-y-2 shadow-sm">
+                          <p className="text-sm italic text-secondary-foreground">&ldquo;{ex.text}&rdquo;</p>
                           {ex.translation && (
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs text-secondary-foreground/70">
                               Translation: {ex.translation}
                             </p>
                           )}
                           <div className="flex items-center justify-between">
-                            <div className="flex flex-col text-xs text-muted-foreground">
+                            <div className="flex flex-col text-xs text-secondary-foreground/70">
                               <span>By {ex.author.name || ex.author.email || 'Anonymous'}</span>
                               <time dateTime={ex.createdAt.toISOString()}>
                                 {ex.createdAt.toLocaleDateString()}
