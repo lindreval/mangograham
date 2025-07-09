@@ -47,3 +47,6 @@ claude-*
 
 # seed data file
 multilingual-urban-dictionary/prisma/seed.ts
+
+# PRD
+PRD.md
