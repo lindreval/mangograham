@@ -114,7 +114,15 @@ export default async function PhrasePage({
               <li key={def.id} className="rounded-lg border-4 bg-card text-card-foreground p-4 space-y-3 shadow-elevation-medium">
                 <p className="mb-1 text-card-foreground">{def.body}</p>
                 <div className="flex items-center justify-between text-xs text-card-foreground/70">
-                  <span>By {def.author.name || def.author.email || 'Anonymous'}</span>
+                  <span>
+                    By {def.author.username ? (
+                      <Link href={`/user/${def.author.username}`} className="text-[var(--primary)] hover:underline">
+                        {def.author.name || def.author.email || 'Anonymous'}
+                      </Link>
+                    ) : (
+                      def.author.name || def.author.email || 'Anonymous'
+                    )}
+                  </span>
                   <time dateTime={def.createdAt.toISOString()}>
                     {def.createdAt.toLocaleDateString()}
                   </time>
@@ -159,7 +167,15 @@ export default async function PhrasePage({
                           )}
                           <div className="flex items-center justify-between">
                             <div className="flex flex-col text-xs text-secondary-foreground/70">
-                              <span>By {ex.author.name || ex.author.email || 'Anonymous'}</span>
+                              <span>
+                                By {ex.author.username ? (
+                                  <Link href={`/user/${ex.author.username}`} className="text-[var(--primary)] hover:underline">
+                                    {ex.author.name || ex.author.email || 'Anonymous'}
+                                  </Link>
+                                ) : (
+                                  ex.author.name || ex.author.email || 'Anonymous'
+                                )}
+                              </span>
                               <time dateTime={ex.createdAt.toISOString()}>
                                 {ex.createdAt.toLocaleDateString()}
                               </time>

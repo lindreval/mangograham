@@ -86,6 +86,7 @@ import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import type { NextAuthOptions } from "next-auth";
+import { generateUniqueUsername } from "@/lib/username-generator";
 
 // Extend the built-in session types
 declare module "next-auth" {
@@ -126,6 +127,18 @@ export const authConfig: NextAuthOptions = {
         session.user.role = (user as { role?: string }).role || "user";
       }
       return session;
+    },
+  },
+  events: {
+    async createUser({ user }) {
+      // Generate and assign username when user is created
+      if (user.email && user.name !== undefined) {
+        const username = await generateUniqueUsername(user.name, user.email);
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { username }
+        });
+      }
     },
   },
 };
