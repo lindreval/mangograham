@@ -38,7 +38,7 @@ export default function AboutPage() {
           <h2 className="text-2xl font-semibold mb-4 text-foreground">Why &ldquo;Yung Salita&rdquo;?</h2>
           <div className="max-w-none">
             <p className="text-card-foreground/80">
-              &ldquo;Yung Salita&rdquo; comes from Filipino/Tagalog, meaning &ldquo;those words&rdquo; or &ldquo;the words.&rdquo; 
+              &ldquo;Yung Salita&rdquo; comes from Tagalog, meaning &ldquo;those words&rdquo; or &ldquo;the words.&rdquo; 
               It represents our focus on capturing and preserving the words that matter to communities 
               around the world - the informal, creative, and expressive language that brings people together.
             </p>
