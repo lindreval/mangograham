@@ -4,11 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays, Trophy, TrendingUp, Info } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { CalendarDays, Trophy, TrendingUp } from "lucide-react";
 import EditProfileModal from "@/components/EditProfileModal";
 import SortableContributions from "@/components/SortableContributions";
 import { calculateUserReputation, getReputationLevel } from "@/lib/reputation";
+import ReputationInfo from "@/components/ReputationInfo";
 
 export default async function ProfilePage() {
   const session = await getServerSession(authConfig);
@@ -150,7 +151,7 @@ export default async function ProfilePage() {
                 
                 <div className="flex items-center gap-1">
                   <TrendingUp className="w-4 h-4" />
-                  {reputationData.totalReputation} reputation
+                  <ReputationInfo reputationData={reputationData} reputationLevel={reputationLevel} />
                 </div>
               </div>
             </div>
@@ -196,68 +197,6 @@ export default async function ProfilePage() {
         </Card>
       </div>
 
-      {/* Reputation Breakdown */}
-      <Card className="border-4 shadow-elevation-medium">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Info className="w-5 h-5" />
-            Reputation Breakdown
-          </CardTitle>
-          <CardDescription>
-            How your reputation of {reputationData.totalReputation} points is calculated
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="text-center">
-              <div className="text-lg font-semibold text-blue-600">
-                {reputationData.breakdown.fromDefinitions}
-              </div>
-              <div className="text-sm text-muted-foreground">From Definitions</div>
-              <div className="text-xs text-muted-foreground mt-1">
-                {reputationData.definitionUpvotes} upvotes (+2 each), {reputationData.definitionDownvotes} downvotes (-1 each)
-              </div>
-            </div>
-            
-            <div className="text-center">
-              <div className="text-lg font-semibold text-green-600">
-                {reputationData.breakdown.fromExamples}
-              </div>
-              <div className="text-sm text-muted-foreground">From Examples</div>
-              <div className="text-xs text-muted-foreground mt-1">
-                {reputationData.exampleUpvotes} upvotes (+1 each), {reputationData.exampleDownvotes} downvotes (-0.5 each)
-              </div>
-            </div>
-            
-            <div className="text-center sm:col-span-2 lg:col-span-1">
-              <div className="text-lg font-semibold text-purple-600">
-                {reputationData.breakdown.fromPhrases}
-              </div>
-              <div className="text-sm text-muted-foreground">From Phrases</div>
-              <div className="text-xs text-muted-foreground mt-1">
-                {reputationData.approvedPhrases} approved phrases (+1 each)
-              </div>
-            </div>
-          </div>
-          
-          {reputationLevel.nextLevel && (
-            <div className="mt-4 p-4 bg-muted/50 rounded-lg">
-              <div className="text-sm font-medium mb-1">Next Level: {reputationLevel.nextLevel.name}</div>
-              <div className="text-xs text-muted-foreground">
-                Need {reputationLevel.nextLevel.minRep - reputationData.totalReputation} more reputation points
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                <div 
-                  className="bg-primary h-2 rounded-full transition-all duration-300"
-                  style={{ 
-                    width: `${Math.min(100, ((reputationData.totalReputation - reputationLevel.minRep) / (reputationLevel.nextLevel.minRep - reputationLevel.minRep)) * 100)}%` 
-                  }}
-                />
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Sortable Contributions Section */}
       <SortableContributions 

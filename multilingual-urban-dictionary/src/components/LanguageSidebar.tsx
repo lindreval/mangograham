@@ -14,12 +14,12 @@ export default function LanguageSidebar({ languages }: Props) {
 
   return (
     <>
-      {/* Mobile Language Selector */}
+      {/* Mobile Language Selector - Above content */}
       <div className="md:hidden mb-4">
         <div className="rounded-lg border-4 bg-card text-card-foreground shadow-elevation-medium">
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="w-full flex items-center justify-between p-4 text-left font-semibold hover:bg-card/80 transition-colors"
+            className="w-full flex items-center justify-between p-3 text-left font-semibold hover:bg-card/80 transition-colors"
           >
             <Link
               href={`/languages`}
@@ -35,8 +35,8 @@ export default function LanguageSidebar({ languages }: Props) {
             )}
           </button>
           {isExpanded && (
-            <div className="border-t border-border px-4 pb-4">
-              <ul className="space-y-2 text-sm mt-2">
+            <div className="border-t border-border px-3 pb-3">
+              <ul className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm mt-2">
                 {languages.map((lang) => (
                   <li key={lang.id}>
                     <Link
