@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/authOptions";
+import { authConfig } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import slugify from "@/lib/slugify";
 
@@ -11,7 +11,7 @@ export async function PUT(
   const { id } = await params;
   
   // Check if user is admin
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(authConfig);
   if (!session || session.user?.role !== "admin") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
@@ -26,6 +26,7 @@ export async function PUT(
       languageId,
       status,
       selectedTags,
+      definitions,
     } = data;
 
     // Get current phrase to check if slug needs updating
@@ -80,6 +81,92 @@ export async function PUT(
           tagId,
         })),
       });
+    }
+
+    // Update definitions if provided
+    if (definitions && Array.isArray(definitions)) {
+      // Process each definition
+      for (const definition of definitions) {
+        if (definition.id) {
+          // Update existing definition
+          await prisma.definition.update({
+            where: { id: definition.id },
+            data: {
+              body: definition.body,
+              status: definition.status,
+            },
+          });
+
+          // Handle examples for this definition
+          if (definition.examples && Array.isArray(definition.examples)) {
+            // Delete existing examples for this definition
+            await prisma.example.deleteMany({
+              where: { definitionId: definition.id },
+            });
+
+            // Create new examples
+            for (const example of definition.examples) {
+              if (example.text.trim()) {
+                await prisma.example.create({
+                  data: {
+                    text: example.text,
+                    translation: example.translation || null,
+                    status: example.status,
+                    definitionId: definition.id,
+                    authorId: session.user.id,
+                  },
+                });
+              }
+            }
+          }
+        } else {
+          // Create new definition
+          const newDefinition = await prisma.definition.create({
+            data: {
+              body: definition.body,
+              status: definition.status,
+              phraseId: parseInt(id),
+              authorId: session.user.id,
+            },
+          });
+
+          // Create examples for new definition
+          if (definition.examples && Array.isArray(definition.examples)) {
+            for (const example of definition.examples) {
+              if (example.text.trim()) {
+                await prisma.example.create({
+                  data: {
+                    text: example.text,
+                    translation: example.translation || null,
+                    status: example.status,
+                    definitionId: newDefinition.id,
+                    authorId: session.user.id,
+                  },
+                });
+              }
+            }
+          }
+        }
+      }
+
+      // Remove definitions that are no longer in the array
+      const definitionIds = definitions
+        .filter(d => d.id)
+        .map(d => d.id);
+      
+      if (definitionIds.length > 0) {
+        await prisma.definition.deleteMany({
+          where: {
+            phraseId: parseInt(id),
+            id: { notIn: definitionIds },
+          },
+        });
+      } else {
+        // If no existing definitions remain, delete all
+        await prisma.definition.deleteMany({
+          where: { phraseId: parseInt(id) },
+        });
+      }
     }
 
     return NextResponse.json(updatedPhrase);

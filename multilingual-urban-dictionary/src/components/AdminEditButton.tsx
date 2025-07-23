@@ -19,7 +19,7 @@ export default function AdminEditButton({ phraseId }: AdminEditButtonProps) {
 
   return (
     <button
-      className="bg-primary hover:bg-orange-700 text-white px-3 py-1.5 rounded text-sm font-medium transition-colors"
+      className="w-full md:w-auto md:flex-shrink-0 rounded bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90 font-bold text-center transition-colors"
       onClick={handleEditClick}
     >
       Edit

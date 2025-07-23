@@ -34,6 +34,14 @@ export default async function EditPhrasePage({
           tag: true,
         },
       },
+      definitions: {
+        include: {
+          examples: true,
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+      },
     },
   });
 
@@ -46,10 +54,6 @@ export default async function EditPhrasePage({
     orderBy: { name: "asc" },
   });
 
-  // Get all tags for the form
-  const tags = await prisma.tag.findMany({
-    orderBy: { name: "asc" },
-  });
 
   return (
     <main className="mx-auto max-w-4xl p-4 md:p-6 space-y-6">
@@ -63,7 +67,6 @@ export default async function EditPhrasePage({
       <EditPhraseForm 
         phrase={phrase}
         languages={languages}
-        tags={tags}
       />
     </main>
   );
