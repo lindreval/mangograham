@@ -159,7 +159,7 @@ export default async function AdminPage() {
                   <div className="mb-2 text-sm space-y-1">
                     <strong>Definitions:</strong>
                     {phrase.definitions.map((def, i) => (
-                      <p key={i} className="ml-4 italic">• {def.body}</p>
+                      <p key={i} className="ml-4 italic whitespace-pre-wrap">• {def.body}</p>
                     ))}
                   </div>
                 )}
@@ -219,7 +219,7 @@ export default async function AdminPage() {
                   <strong>{def.phrase.textOriginal}</strong> —{" "}
                   {def.phrase.language.name}
                 </div>
-                <p className="mb-2">{def.body}</p>
+                <p className="mb-2 whitespace-pre-wrap">{def.body}</p>
                 {def.examples.length > 0 && (
                   <div className="mb-2 text-sm italic space-y-1">
                       {def.examples.map((ex, i) => (
@@ -287,12 +287,12 @@ export default async function AdminPage() {
                   {ex.definition.phrase.language.name}
                 </div>
                 <div className="mb-2 text-sm text-muted-foreground">
-                  <strong>Definition:</strong> {ex.definition.body}
+                  <strong>Definition:</strong> <span className="whitespace-pre-wrap">{ex.definition.body}</span>
                 </div>
-                <p className="mb-2 italic">&ldquo;{ex.text}&rdquo;</p>
+                <p className="mb-2 italic whitespace-pre-wrap">&ldquo;{ex.text}&rdquo;</p>
                 {ex.translation && (
                   <p className="mb-2 text-sm text-muted-foreground">
-                    <strong>Translation:</strong> {ex.translation}
+                    <strong>Translation:</strong> <span className="whitespace-pre-wrap">{ex.translation}</span>
                   </p>
                 )}
                 <div className="flex gap-2">

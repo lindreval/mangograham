@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { CalendarDays, Trophy, TrendingUp } from "lucide-react";
 import EditProfileModal from "@/components/EditProfileModal";
-import SortableContributions from "@/components/SortableContributions";
+import InfiniteSortableContributions from "@/components/InfiniteSortableContributions";
 import { calculateUserReputation, getReputationLevel } from "@/lib/reputation";
 import ReputationInfo from "@/components/ReputationInfo";
 import type { Metadata } from "next";
@@ -26,66 +26,98 @@ export default async function ProfilePage() {
 
   const userId = session.user.id;
   
-  // Get user data with their contributions
-  const userData = await prisma.user.findUnique({
-    where: { id: userId },
-    include: {
-      phrases: {
+  // Get user data with their contributions and total counts
+  const [userData, totalCounts] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        phrases: {
+          include: {
+            language: true,
+            definitions: {
+              include: {
+                votes: true
+              }
+            }
+          },
+          orderBy: { createdAt: "desc" },
+          take: 10
+        },
+        definitions: {
+          include: {
+            phrase: {
+              include: {
+                language: true
+              }
+            },
+            votes: true,
+            examples: true
+          },
+          orderBy: { createdAt: "desc" },
+          take: 10
+        },
+        examples: {
+          include: {
+            definition: {
+              include: {
+                phrase: {
+                  include: {
+                    language: true
+                  }
+                }
+              }
+            },
+            votes: true
+          },
+          orderBy: { createdAt: "desc" },
+          take: 10
+        }
+      }
+    }),
+    // Get total counts and vote scores for stats
+    Promise.all([
+      prisma.phrase.findMany({
+        where: { authorId: userId },
         include: {
-          language: true,
           definitions: {
             include: {
               votes: true
             }
           }
-        },
-        orderBy: { createdAt: "desc" }
-      },
-      definitions: {
+        }
+      }),
+      prisma.definition.findMany({
+        where: { authorId: userId },
         include: {
-          phrase: {
-            include: {
-              language: true
-            }
-          },
-          votes: true,
-          examples: true
-        },
-        orderBy: { createdAt: "desc" }
-      },
-      examples: {
-        include: {
-          definition: {
-            include: {
-              phrase: {
-                include: {
-                  language: true
-                }
-              }
-            }
-          },
           votes: true
-        },
-        orderBy: { createdAt: "desc" }
-      }
-    }
-  });
+        }
+      }),
+      prisma.example.findMany({
+        where: { authorId: userId },
+        include: {
+          votes: true
+        }
+      })
+    ])
+  ]);
+
+  const [allPhrases, allDefinitions, allExamples] = totalCounts;
 
   if (!userData) {
     redirect("/");
   }
 
-  // Calculate comprehensive stats
-  const definitionVoteScore = userData.definitions.reduce((total, def) => 
+  // Calculate comprehensive stats using total data
+  const definitionVoteScore = allDefinitions.reduce((total, def) => 
     total + def.votes.reduce((sum, vote) => sum + vote.value, 0), 0
   );
   
-  const exampleVoteScore = userData.examples.reduce((total, ex) => 
+  const exampleVoteScore = allExamples.reduce((total, ex) => 
     total + ex.votes.reduce((sum, vote) => sum + vote.value, 0), 0
   );
 
   const totalUpvotes = definitionVoteScore + exampleVoteScore;
-  const totalContributions = userData.phrases.length + userData.definitions.length + userData.examples.length;
+  const totalContributions = allPhrases.length + allDefinitions.length + allExamples.length;
 
   // Calculate actual reputation
   const reputationData = await calculateUserReputation(userId);
@@ -169,21 +201,21 @@ export default async function ProfilePage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
         <Card className="border-4 shadow-elevation-medium">
           <CardContent className="pt-4 md:pt-6 text-center">
-            <div className="text-xl md:text-2xl font-bold text-primary">{userData.phrases.length}</div>
+            <div className="text-xl md:text-2xl font-bold text-primary">{allPhrases.length}</div>
             <div className="text-xs md:text-sm text-muted-foreground">Phrases Submitted</div>
           </CardContent>
         </Card>
         
         <Card className="border-4 shadow-elevation-medium">
           <CardContent className="pt-4 md:pt-6 text-center">
-            <div className="text-xl md:text-2xl font-bold text-primary">{userData.definitions.length}</div>
+            <div className="text-xl md:text-2xl font-bold text-primary">{allDefinitions.length}</div>
             <div className="text-xs md:text-sm text-muted-foreground">Definitions Added</div>
           </CardContent>
         </Card>
         
         <Card className="border-4 shadow-elevation-medium">
           <CardContent className="pt-4 md:pt-6 text-center">
-            <div className="text-xl md:text-2xl font-bold text-primary">{userData.examples.length}</div>
+            <div className="text-xl md:text-2xl font-bold text-primary">{allExamples.length}</div>
             <div className="text-xs md:text-sm text-muted-foreground">Examples Contributed</div>
           </CardContent>
         </Card>
@@ -204,11 +236,16 @@ export default async function ProfilePage() {
       </div>
 
 
-      {/* Sortable Contributions Section */}
-      <SortableContributions 
-        phrases={userData.phrases}
-        definitions={userData.definitions}
-        examples={userData.examples}
+      {/* Infinite Sortable Contributions Section */}
+      <InfiniteSortableContributions 
+        initialPhrases={userData.phrases}
+        initialDefinitions={userData.definitions}
+        initialExamples={userData.examples}
+        totalCounts={{
+          phrases: allPhrases.length,
+          definitions: allDefinitions.length,
+          examples: allExamples.length
+        }}
       />
     </main>
   );

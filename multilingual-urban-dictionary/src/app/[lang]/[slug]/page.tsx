@@ -127,7 +127,7 @@ export default async function PhrasePage({
             
             return (
               <li key={def.id} className="rounded-lg border-4 bg-card text-card-foreground p-4 md:p-6 space-y-3 md:space-y-4 shadow-elevation-medium">
-                <p className="mb-1 text-sm md:text-base text-card-foreground leading-relaxed">{def.body}</p>
+                <p className="mb-1 text-sm md:text-base text-card-foreground leading-relaxed whitespace-pre-wrap">{def.body}</p>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs md:text-sm text-card-foreground/70">
                   <span>
                     By {def.author.username ? (
@@ -174,9 +174,9 @@ export default async function PhrasePage({
                       
                       return (
                         <div key={ex.id} className="rounded-lg border-2 bg-secondary/30 text-secondary-foreground p-3 md:p-4 space-y-2 md:space-y-3 shadow-sm">
-                          <p className="text-sm md:text-base italic text-secondary-foreground leading-relaxed">&ldquo;{ex.text}&rdquo;</p>
+                          <p className="text-sm md:text-base italic text-secondary-foreground leading-relaxed whitespace-pre-wrap">&ldquo;{ex.text}&rdquo;</p>
                           {ex.translation && (
-                            <p className="text-xs md:text-sm text-secondary-foreground/70">
+                            <p className="text-xs md:text-sm text-secondary-foreground/70 whitespace-pre-wrap">
                               Translation: {ex.translation}
                             </p>
                           )}

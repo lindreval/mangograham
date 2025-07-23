@@ -22,7 +22,7 @@ export default function AdminEditButton({ phraseId }: AdminEditButtonProps) {
       className="w-full md:w-auto md:flex-shrink-0 rounded bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90 font-bold text-center transition-colors"
       onClick={handleEditClick}
     >
-      Edit Page
+      Edit
     </button>
   );
 }
