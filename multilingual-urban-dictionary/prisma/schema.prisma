@@ -31,6 +31,7 @@ model Phrase {
   definitions    Definition[]
   language       Language     @relation(fields: [languageId], references: [id])
   author         User?        @relation("UserPhrases", fields: [authorId], references: [id])
+  tags           PhraseTag[]
 
   @@unique([languageId, normalized], name: "normalized_languageId")
   @@index([textOriginal, languageId])
@@ -104,6 +105,7 @@ model User {
   definitions     Definition[]     @relation("UserDefinitions")
   examples        Example[]        @relation("UserExamples")
   phrases         Phrase[]         @relation("UserPhrases")
+  tags            Tag[]            @relation("UserTags")
   definitionVotes DefinitionVote[]
   exampleVotes    ExampleVote[]
   sessions        Session[]
@@ -155,4 +157,25 @@ model Feedback {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   user        User?    @relation(fields: [userId], references: [id])
+}
+
+model Tag {
+  id        Int         @id @default(autoincrement())
+  name      String      @unique
+  color     String?     @default("#3B82F6")
+  authorId  String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  author    User        @relation("UserTags", fields: [authorId], references: [id])
+  phrases   PhraseTag[]
+}
+
+model PhraseTag {
+  phraseId  Int
+  tagId     Int
+  createdAt DateTime @default(now())
+  phrase    Phrase   @relation(fields: [phraseId], references: [id], onDelete: Cascade)
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([phraseId, tagId])
 }

@@ -11,14 +11,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { definitionId, exampleId } = await request.json();
+    const { definitionId, exampleId, phraseId } = await request.json();
     
-    if (!definitionId && !exampleId) {
-      return NextResponse.json({ error: 'Definition ID or Example ID is required' }, { status: 400 });
+    if (!definitionId && !exampleId && !phraseId) {
+      return NextResponse.json({ error: 'Definition ID, Example ID, or Phrase ID is required' }, { status: 400 });
     }
 
-    if (definitionId && exampleId) {
-      return NextResponse.json({ error: 'Cannot flag both definition and example at once' }, { status: 400 });
+    const flagCount = [definitionId, exampleId, phraseId].filter(Boolean).length;
+    if (flagCount > 1) {
+      return NextResponse.json({ error: 'Cannot flag multiple items at once' }, { status: 400 });
     }
 
     if (definitionId) {
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
 
       await prisma.definition.update({
         where: { id: definitionId },
-        data: { status: 'pending' }
+        data: { status: 'needs review' }
       });
 
       return NextResponse.json({ success: true, message: 'Definition flagged successfully' });
@@ -61,10 +62,33 @@ export async function POST(request: NextRequest) {
 
       await prisma.example.update({
         where: { id: exampleId },
-        data: { status: 'pending' }
+        data: { status: 'needs review' }
       });
 
       return NextResponse.json({ success: true, message: 'Example flagged successfully' });
+    }
+
+    if (phraseId) {
+      // Handle phrase flagging
+      const phrase = await prisma.phrase.findUnique({
+        where: { id: phraseId },
+        select: { id: true, status: true }
+      });
+
+      if (!phrase) {
+        return NextResponse.json({ error: 'Phrase not found' }, { status: 404 });
+      }
+
+      if (phrase.status === 'needs review') {
+        return NextResponse.json({ error: 'Phrase is already flagged for review' }, { status: 400 });
+      }
+
+      await prisma.phrase.update({
+        where: { id: phraseId },
+        data: { status: 'needs review' }
+      });
+
+      return NextResponse.json({ success: true, message: 'Phrase flagged successfully' });
     }
   } catch (error) {
     console.error('Error flagging content:', error);

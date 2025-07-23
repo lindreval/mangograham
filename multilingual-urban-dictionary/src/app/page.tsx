@@ -149,6 +149,9 @@ export default async function Home() {
   // Fetch newest 20 phrases + their language name & isoCode + top definitions
   const phrases = await prisma.phrase.findMany({
     where: {
+      status: {
+        in: ["approved", "pending"],
+      },
       definitions: {
         some: {
           status: {
@@ -162,6 +165,11 @@ export default async function Home() {
     include: {
       language: {
         select: { id: true, name: true, isoCode: true },
+      },
+      tags: {
+        include: {
+          tag: true,
+        },
       },
       definitions: {
         where: {

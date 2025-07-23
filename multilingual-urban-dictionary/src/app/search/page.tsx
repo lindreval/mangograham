@@ -1,9 +1,9 @@
 // src/app/search/page.tsx
 import { prisma } from "@/lib/prisma";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import PhraseCard from "@/components/PhraseCard";
 import type { Metadata } from "next";
+import Link from "next/link";
+import PhraseCard from "@/components/PhraseCard";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -54,7 +54,7 @@ export default async function SearchPage({
         { transliteration: { contains: query.toLowerCase() } }
       ]
     },
-    take: 50,
+    take: 20,
     orderBy: { createdAt: "desc" },
     include: {
       language: {

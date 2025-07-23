@@ -3,10 +3,12 @@
 import { useSearchParams } from "next/navigation";
 import { createSubmission } from "./actions";
 import { useState } from "react";
+import TagSelector from "@/components/TagSelector";
 
 interface Language {
   id: number;
   name: string;
+  isoCode: string;
   transliteration: boolean;
 }
 
@@ -14,10 +16,24 @@ interface SubmitFormProps {
   languages: Language[];
 }
 
+interface Tag {
+  id: number;
+  name: string;
+  color: string;
+  author: {
+    name: string | null;
+    username: string | null;
+  };
+  _count: {
+    phrases: number;
+  };
+}
+
 export default function SubmitForm({ languages }: SubmitFormProps) {
   const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedLanguageId, setSelectedLanguageId] = useState(searchParams.get("languageId") || "");
+  const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   
   // Get pre-filled values from URL params
   const preFilledPhrase = searchParams.get("phrase") || "";
@@ -35,11 +51,27 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
   const requiresTransliteration = selectedLanguage?.transliteration || false;
 
   async function handleSubmit(formData: FormData) {
+    console.log("Setting isSubmitting to true");
     setIsSubmitting(true);
+    
     try {
-      await createSubmission(formData);
-      // Redirect on successful submission
-      window.location.href = "/";
+      // Add selected tag IDs to form data
+      selectedTags.forEach((tag, index) => {
+        formData.append(`tagIds[${index}]`, tag.id.toString());
+      });
+      
+      console.log("Calling createSubmission");
+      const result = await createSubmission(formData);
+      console.log("createSubmission completed", result);
+      
+      // Redirect back to the phrase page after successful submission
+      if (result && result.slug && result.language) {
+        console.log("Redirecting to phrase page");
+        window.location.href = `/${result.language.isoCode}/${result.slug}`;
+      } else {
+        console.log("Redirecting to home page");
+        window.location.href = "/";
+      }
     } catch (error) {
       console.error("Submission failed:", error);
       setIsSubmitting(false);
@@ -47,8 +79,19 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
   }
 
   return (
-    <div className="rounded-lg border-4 bg-card text-card-foreground p-6 shadow-elevation-medium">
-      <h1 className="text-2xl font-bold mb-6">
+    <div className="relative rounded-lg border-4 bg-card text-card-foreground p-6 shadow-elevation-medium">
+      {/* Loading Overlay */}
+      {isSubmitting && (
+        <div className="absolute inset-0 bg-white/80 rounded-lg flex items-center justify-center z-50">
+          <div className="flex flex-col items-center gap-3 bg-white rounded-lg shadow-lg p-6">
+            <div className="animate-spin rounded-full h-8 w-8 border-4 border-var(--primary) border-t-transparent"></div>
+            <p className="text-sm font-medium text-gray-800">Submitting your content...</p>
+          </div>
+        </div>
+      )}
+      
+      <div className={isSubmitting ? "opacity-50 pointer-events-none" : ""}>
+        <h1 className="text-2xl font-bold mb-6">
         {isExistingDefinition 
           ? `Add Example for "${preFilledPhrase}"` 
           : isExistingPhrase 
@@ -56,7 +99,12 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
           : "Add a Slang Phrase"}
       </h1>
       
-      <form action={handleSubmit} className="space-y-4">
+      <form onSubmit={(e) => {
+        e.preventDefault();
+        setIsSubmitting(true); // Set loading state immediately
+        const formData = new FormData(e.currentTarget);
+        handleSubmit(formData);
+      }} className="space-y-4">
       {isExistingDefinition && (
         <div className="rounded-lg bg-green-50 border border-green-200 p-4 mb-4">
           <h3 className="text-sm font-medium text-green-800 mb-1">
@@ -81,7 +129,7 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
       <label className="block">
         <span className="block font-medium">Language</span>
         <select
-          name="languageId"
+          name={isExistingPhrase ? "languageIdDisplay" : "languageId"}
           className={`w-full rounded border p-2 ${
             isExistingPhrase 
               ? "bg-gray-100 text-gray-600 cursor-not-allowed" 
@@ -90,7 +138,7 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
           value={selectedLanguageId}
           onChange={(e) => setSelectedLanguageId(e.target.value)}
           disabled={!!isExistingPhrase}
-          required
+          required={!isExistingPhrase}
         >
           <option value="">Select a language</option>
           {languages.map((l) => (
@@ -99,12 +147,19 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
             </option>
           ))}
         </select>
+        {isExistingPhrase && (
+          <input
+            type="hidden"
+            name="languageId"
+            value={preFilledLanguageId}
+          />
+        )}
       </label>
       
       <label className="block">
         <span className="block font-medium">Phrase</span>
         <input
-          name="phrase"
+          name={isExistingPhrase ? "phraseDisplay" : "phrase"}
           className={`w-full rounded border p-2 ${
             isExistingPhrase 
               ? "bg-gray-100 text-gray-600 cursor-not-allowed" 
@@ -113,8 +168,15 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
           placeholder="e.g. Qué chido"
           defaultValue={preFilledPhrase}
           disabled={!!isExistingPhrase}
-          required
+          required={!isExistingPhrase}
         />
+        {isExistingPhrase && (
+          <input
+            type="hidden"
+            name="phrase"
+            value={preFilledPhrase}
+          />
+        )}
       </label>
       
       {requiresTransliteration && !isExistingPhrase && (
@@ -127,6 +189,17 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
             required
           />
         </label>
+      )}
+      
+      {!isExistingPhrase && (
+        <div className="block">
+          <span className="block font-medium mb-2">Tags</span>
+          <TagSelector
+            selectedTags={selectedTags}
+            onTagsChange={setSelectedTags}
+            disabled={isSubmitting}
+          />
+        </div>
       )}
       
       {isExistingDefinition && (
@@ -196,8 +269,11 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="rounded bg-primary px-4 py-2 text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex items-center justify-center gap-2 rounded bg-primary px-4 py-2 text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
       >
+        {isSubmitting && (
+          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+        )}
         {isSubmitting ? "Submitting..." : "Submit"}
       </button>
       
@@ -213,7 +289,8 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
         </a>
         {" "}and confirm that you are at least 16 years old.
       </div>
-    </form>
+      </form>
+      </div>
     </div>
   );
 }

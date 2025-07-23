@@ -20,7 +20,7 @@ export default function AuthButton() {
     <div className="flex items-center gap-2">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className="text-sm hover:underline">
+          <Button variant="ghost" size="sm" className="border-1 text-sm hover:underline">
             Hi {session.user?.name?.split(" ")[0] ?? "friend"}
           </Button>
         </DropdownMenuTrigger>
