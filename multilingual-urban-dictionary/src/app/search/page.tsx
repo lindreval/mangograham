@@ -3,7 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
-import PhraseCard from "@/components/PhraseCard";
+import InfiniteScrollSearch from "@/components/InfiniteScrollSearch";
+import type { PhraseWithLang } from "@/components/PhraseCard";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -64,6 +65,11 @@ export default async function SearchPage({
           isoCode: true,
         },
       },
+      tags: {
+        include: {
+          tag: true,
+        },
+      },
       definitions: {
         where: { status: { in: ["approved", "pending"] } },
         include: {
@@ -102,11 +108,7 @@ export default async function SearchPage({
           </Link>
         </p>
       ) : (
-        <div className="space-y-4 transition-transform duration-300 hover:scale-102">
-          {results.map((phrase) => (
-            <PhraseCard key={phrase.id} phrase={phrase} />
-          ))}
-        </div>
+        <InfiniteScrollSearch initialPhrases={results as PhraseWithLang[]} query={query} />
       )}
     </main>
   );

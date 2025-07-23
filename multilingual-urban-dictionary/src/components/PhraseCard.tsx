@@ -83,7 +83,7 @@ export default function PhraseCard({ phrase }: { phrase: PhraseWithLang }) {
 
         {topDefinition && (
           <div className={`space-y-2 ${isNSFW && !showNSFW ? 'blur-sm select-none' : ''}`}>
-            <p className="text-base text-card-foreground/80">
+            <p className="text-base text-card-foreground/80 whitespace-pre-wrap">
               {topDefinition.body.length > 100
                 ? `${topDefinition.body.substring(0, 100)}...`
                 : topDefinition.body}
@@ -91,13 +91,13 @@ export default function PhraseCard({ phrase }: { phrase: PhraseWithLang }) {
 
             {topExample && (
               <div className="border-l-2 border-card-foreground/20 pl-3 space-y-1 bg-card/50 rounded-r p-2">
-                <p className="text-base italic text-card-foreground/70">
+                <p className="text-base italic text-card-foreground/70 whitespace-pre-wrap">
                   &ldquo;{topExample.text.length > 80
                     ? `${topExample.text.substring(0, 80)}...`
                     : topExample.text}&rdquo;
                 </p>
                 {topExample.translation && (
-                  <p className="text-s text-card-foreground/60">
+                  <p className="text-s text-card-foreground/60 whitespace-pre-wrap">
                     {topExample.translation.length > 80
                       ? `${topExample.translation.substring(0, 80)}...`
                       : topExample.translation}

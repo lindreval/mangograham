@@ -2,18 +2,44 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Phrase, Language, Tag, PhraseTag } from "@prisma/client";
+import type { Phrase, Language, Definition, Example } from "@prisma/client";
+import TagSelector from "./TagSelector";
+import DefinitionEditor from "./DefinitionEditor";
+
+// Define the interface that matches TagSelector's expected Tag type
+interface TagSelectorTag {
+  id: number;
+  name: string;
+  color: string;
+  author: {
+    name: string | null;
+    username: string | null;
+  };
+  _count: {
+    phrases: number;
+  };
+}
+
+interface DefinitionWithExamples extends Definition {
+  examples: Example[];
+}
 
 interface EditPhraseFormProps {
   phrase: Phrase & {
     language: Language;
-    tags: (PhraseTag & { tag: Tag })[];
+    tags: Array<{
+      tag: {
+        id: number;
+        name: string;
+        color: string | null;
+      };
+    }>;
+    definitions: DefinitionWithExamples[];
   };
   languages: Language[];
-  tags: Tag[];
 }
 
-export default function EditPhraseForm({ phrase, languages, tags }: EditPhraseFormProps) {
+export default function EditPhraseForm({ phrase, languages }: EditPhraseFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -25,7 +51,47 @@ export default function EditPhraseForm({ phrase, languages, tags }: EditPhraseFo
     partOfSpeech: phrase.partOfSpeech || "",
     languageId: phrase.languageId,
     status: phrase.status,
-    selectedTags: phrase.tags.map(pt => pt.tag.id),
+  });
+
+  // Convert phrase tags to the format expected by TagSelector
+  const [selectedTags, setSelectedTags] = useState<TagSelectorTag[]>(() => {
+    return phrase.tags.map(pt => ({
+      id: pt.tag.id,
+      name: pt.tag.name,
+      color: pt.tag.color || "#3B82F6",
+      author: {
+        name: null,
+        username: null,
+      },
+      _count: {
+        phrases: 0,
+      },
+    }));
+  });
+
+  // Convert phrase definitions to the format expected by DefinitionEditor
+  const [definitions, setDefinitions] = useState<{
+    id?: number;
+    body: string;
+    status: string;
+    examples: {
+      id?: number;
+      text: string;
+      translation?: string;
+      status: string;
+    }[];
+  }[]>(() => {
+    return phrase.definitions.map(def => ({
+      id: def.id,
+      body: def.body,
+      status: def.status,
+      examples: def.examples.map(ex => ({
+        id: ex.id,
+        text: ex.text,
+        translation: ex.translation || "",
+        status: ex.status,
+      })),
+    }));
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,7 +105,11 @@ export default function EditPhraseForm({ phrase, languages, tags }: EditPhraseFo
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          selectedTags: selectedTags.map(tag => tag.id),
+          definitions,
+        }),
       });
 
       if (!response.ok) {
@@ -58,14 +128,14 @@ export default function EditPhraseForm({ phrase, languages, tags }: EditPhraseFo
     }
   };
 
-  const handleTagToggle = (tagId: number) => {
-    setFormData(prev => ({
-      ...prev,
-      selectedTags: prev.selectedTags.includes(tagId)
-        ? prev.selectedTags.filter(id => id !== tagId)
-        : [...prev.selectedTags, tagId]
-    }));
+  const handleTagsChange = (tags: TagSelectorTag[]) => {
+    setSelectedTags(tags);
   };
+
+  const handleDefinitionsChange = (newDefinitions: typeof definitions) => {
+    setDefinitions(newDefinitions);
+  };
+
 
   return (
     <div className="rounded-lg border bg-card text-card-foreground p-6 shadow-sm">
@@ -170,27 +240,19 @@ export default function EditPhraseForm({ phrase, languages, tags }: EditPhraseFo
 
         <div>
           <label className="block text-sm font-medium mb-3">Tags</label>
-          <div className="flex flex-wrap gap-2">
-            {tags.map((tag) => (
-              <button
-                key={tag.id}
-                type="button"
-                onClick={() => handleTagToggle(tag.id)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  formData.selectedTags.includes(tag.id)
-                    ? 'text-white'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                }`}
-                style={{
-                  backgroundColor: formData.selectedTags.includes(tag.id) 
-                    ? (tag.color || '#3B82F6') 
-                    : undefined
-                }}
-              >
-                {tag.name}
-              </button>
-            ))}
-          </div>
+          <TagSelector
+            selectedTags={selectedTags}
+            onTagsChange={handleTagsChange}
+            disabled={isSubmitting}
+          />
+        </div>
+
+        <div>
+          <DefinitionEditor
+            definitions={definitions}
+            onDefinitionsChange={handleDefinitionsChange}
+            disabled={isSubmitting}
+          />
         </div>
 
         <div className="flex gap-4 pt-4">

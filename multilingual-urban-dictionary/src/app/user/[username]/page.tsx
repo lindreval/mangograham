@@ -6,7 +6,7 @@ import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { CalendarDays, Trophy, TrendingUp } from "lucide-react";
-import SortableContributions from "@/components/SortableContributions";
+import InfiniteSortableContributions from "@/components/InfiniteSortableContributions";
 import { calculateUserReputation, getReputationLevel } from "@/lib/reputation";
 import ReputationInfo from "@/components/ReputationInfo";
 import Link from "next/link";
@@ -21,66 +21,102 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
   const { username } = await params;
   const session = await getServerSession(authConfig);
   
-  // Get user data by username
-  const userData = await prisma.user.findUnique({
-    where: { username: username },
-    include: {
-      phrases: {
-        include: {
-          language: true,
-          definitions: {
-            include: {
-              votes: true
-            }
-          }
-        },
-        orderBy: { createdAt: "desc" }
-      },
-      definitions: {
-        include: {
-          phrase: {
-            include: {
-              language: true
-            }
-          },
-          votes: true,
-          examples: true
-        },
-        orderBy: { createdAt: "desc" }
-      },
-      examples: {
-        include: {
-          definition: {
-            include: {
-              phrase: {
-                include: {
-                  language: true
-                }
+  // Get user data by username and total counts
+  const [userData, totalCounts] = await Promise.all([
+    prisma.user.findUnique({
+      where: { username: username },
+      include: {
+        phrases: {
+          include: {
+            language: true,
+            definitions: {
+              include: {
+                votes: true
               }
             }
           },
-          votes: true
+          orderBy: { createdAt: "desc" },
+          take: 10
         },
-        orderBy: { createdAt: "desc" }
+        definitions: {
+          include: {
+            phrase: {
+              include: {
+                language: true
+              }
+            },
+            votes: true,
+            examples: true
+          },
+          orderBy: { createdAt: "desc" },
+          take: 10
+        },
+        examples: {
+          include: {
+            definition: {
+              include: {
+                phrase: {
+                  include: {
+                    language: true
+                  }
+                }
+              }
+            },
+            votes: true
+          },
+          orderBy: { createdAt: "desc" },
+          take: 10
+        }
       }
-    }
-  });
+    }),
+    // Get user by username first to get the ID for counts
+    prisma.user.findUnique({ where: { username: username } }).then(async (user) => {
+      if (!user) return [[], [], []];
+      
+      return Promise.all([
+        prisma.phrase.findMany({
+          where: { authorId: user.id },
+          include: {
+            definitions: {
+              include: {
+                votes: true
+              }
+            }
+          }
+        }),
+        prisma.definition.findMany({
+          where: { authorId: user.id },
+          include: {
+            votes: true
+          }
+        }),
+        prisma.example.findMany({
+          where: { authorId: user.id },
+          include: {
+            votes: true
+          }
+        })
+      ]);
+    })
+  ]);
+
+  const [allPhrases, allDefinitions, allExamples] = totalCounts;
 
   if (!userData) {
     notFound();
   }
 
-  // Calculate comprehensive stats
-  const definitionVoteScore = userData.definitions.reduce((total, def) => 
+  // Calculate comprehensive stats using total data
+  const definitionVoteScore = allDefinitions.reduce((total, def) => 
     total + def.votes.reduce((sum, vote) => sum + vote.value, 0), 0
   );
   
-  const exampleVoteScore = userData.examples.reduce((total, ex) => 
+  const exampleVoteScore = allExamples.reduce((total, ex) => 
     total + ex.votes.reduce((sum, vote) => sum + vote.value, 0), 0
   );
 
   const totalUpvotes = definitionVoteScore + exampleVoteScore;
-  const totalContributions = userData.phrases.length + userData.definitions.length + userData.examples.length;
+  const totalContributions = allPhrases.length + allDefinitions.length + allExamples.length;
 
   // Calculate actual reputation
   const reputationData = await calculateUserReputation(userData.id);
@@ -158,21 +194,21 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
         <Card className="border-4 shadow-elevation-medium">
           <CardContent className="pt-4 md:pt-6 text-center">
-            <div className="text-xl md:text-2xl font-bold text-primary">{userData.phrases.length}</div>
+            <div className="text-xl md:text-2xl font-bold text-primary">{allPhrases.length}</div>
             <div className="text-xs md:text-sm text-muted-foreground">Phrases Submitted</div>
           </CardContent>
         </Card>
         
         <Card className="border-4 shadow-elevation-medium">
           <CardContent className="pt-4 md:pt-6 text-center">
-            <div className="text-xl md:text-2xl font-bold text-primary">{userData.definitions.length}</div>
+            <div className="text-xl md:text-2xl font-bold text-primary">{allDefinitions.length}</div>
             <div className="text-xs md:text-sm text-muted-foreground">Definitions Added</div>
           </CardContent>
         </Card>
         
         <Card className="border-4 shadow-elevation-medium">
           <CardContent className="pt-4 md:pt-6 text-center">
-            <div className="text-xl md:text-2xl font-bold text-primary">{userData.examples.length}</div>
+            <div className="text-xl md:text-2xl font-bold text-primary">{allExamples.length}</div>
             <div className="text-xs md:text-sm text-muted-foreground">Examples Contributed</div>
           </CardContent>
         </Card>
@@ -192,11 +228,17 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
         </Card>
       </div>
 
-      {/* Sortable Contributions Section */}
-      <SortableContributions 
-        phrases={userData.phrases}
-        definitions={userData.definitions}
-        examples={userData.examples}
+      {/* Infinite Sortable Contributions Section */}
+      <InfiniteSortableContributions 
+        initialPhrases={userData.phrases}
+        initialDefinitions={userData.definitions}
+        initialExamples={userData.examples}
+        userId={userData.id}
+        totalCounts={{
+          phrases: allPhrases.length,
+          definitions: allDefinitions.length,
+          examples: allExamples.length
+        }}
       />
     </main>
   );

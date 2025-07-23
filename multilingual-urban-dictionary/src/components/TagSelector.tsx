@@ -176,7 +176,7 @@ export default function TagSelector({ selectedTags, onTagsChange, disabled }: Ta
               <button
                 type="button"
                 onClick={() => setShowCreateForm(true)}
-                className="inline-flex items-center gap-1 px-2 py-1 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded"
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-primary text-primary-foreground hover:bg-primary/90 rounded font-medium transition-colors"
               >
                 <Plus className="h-3 w-3" />
                 Create new tag
@@ -204,7 +204,7 @@ export default function TagSelector({ selectedTags, onTagsChange, disabled }: Ta
                     type="button"
                     onClick={handleCreateTag}
                     disabled={!newTagName.trim() || isCreating}
-                    className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                    className="px-3 py-1.5 text-xs bg-primary text-primary-foreground hover:bg-primary/90 rounded font-medium transition-colors disabled:opacity-50"
                   >
                     {isCreating ? 'Creating...' : 'Create'}
                   </button>
@@ -214,7 +214,7 @@ export default function TagSelector({ selectedTags, onTagsChange, disabled }: Ta
                       setShowCreateForm(false);
                       setNewTagName("");
                     }}
-                    className="px-3 py-1 text-xs text-gray-600 bg-gray-200 rounded hover:bg-gray-300"
+                    className="px-3 py-1.5 text-xs bg-muted text-muted-foreground hover:bg-muted/80 rounded font-medium transition-colors"
                   >
                     Cancel
                   </button>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -69,82 +69,188 @@ interface Example {
   votes: { value: number }[];
 }
 
-interface SortableContributionsProps {
-  phrases: Phrase[];
-  definitions: Definition[];
-  examples: Example[];
+interface APIResponse {
+  data: (Phrase | Definition | Example)[];
+  hasMore: boolean;
+  type: string;
+  totalCounts?: {
+    phrases: number;
+    definitions: number;
+    examples: number;
+  };
+}
+
+interface InfiniteSortableContributionsProps {
+  initialPhrases: Phrase[];
+  initialDefinitions: Definition[];
+  initialExamples: Example[];
+  userId?: string; // Optional prop to fetch specific user's contributions
+  totalCounts?: {
+    phrases: number;
+    definitions: number;
+    examples: number;
+  };
 }
 
 type SortOption = "recent" | "upvotes" | "oldest";
+type TabType = "phrases" | "definitions" | "examples";
 
-export default function SortableContributions({ phrases, definitions, examples }: SortableContributionsProps) {
+export default function InfiniteSortableContributions({ 
+  initialPhrases, 
+  initialDefinitions, 
+  initialExamples,
+  userId,
+  totalCounts
+}: InfiniteSortableContributionsProps) {
+  const [phrases, setPhrases] = useState<Phrase[]>(initialPhrases);
+  const [definitions, setDefinitions] = useState<Definition[]>(initialDefinitions);
+  const [examples, setExamples] = useState<Example[]>(initialExamples);
+  
+  // State for total counts (will be updated from API responses)
+  const [counts, setCounts] = useState({
+    phrases: totalCounts?.phrases ?? initialPhrases.length,
+    definitions: totalCounts?.definitions ?? initialDefinitions.length,
+    examples: totalCounts?.examples ?? initialExamples.length,
+  });
+  
+  const [phrasePage, setPhrasePage] = useState(2);
+  const [definitionPage, setDefinitionPage] = useState(2);
+  const [examplePage, setExamplePage] = useState(2);
+  
+  const [phraseLoading, setPhraseLoading] = useState(false);
+  const [definitionLoading, setDefinitionLoading] = useState(false);
+  const [exampleLoading, setExampleLoading] = useState(false);
+  
+  const [phraseHasMore, setPhraseHasMore] = useState(true);
+  const [definitionHasMore, setDefinitionHasMore] = useState(true);
+  const [exampleHasMore, setExampleHasMore] = useState(true);
+
   const [phraseSort, setPhraseSort] = useState<SortOption>("recent");
   const [definitionSort, setDefinitionSort] = useState<SortOption>("recent");
   const [exampleSort, setExampleSort] = useState<SortOption>("recent");
 
-  const sortPhrases = (phrases: Phrase[], sortBy: SortOption) => {
-    return [...phrases].sort((a, b) => {
-      switch (sortBy) {
-        case "recent":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        case "oldest":
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-        case "upvotes":
-          const aVotes = a.definitions.reduce((total, def) => 
-            total + def.votes.reduce((sum, vote) => sum + vote.value, 0), 0
-          );
-          const bVotes = b.definitions.reduce((total, def) => 
-            total + def.votes.reduce((sum, vote) => sum + vote.value, 0), 0
-          );
-          return bVotes - aVotes;
-        default:
-          return 0;
+  const [activeTab, setActiveTab] = useState<TabType>("phrases");
+
+  const loadMoreContributions = useCallback(async (type: TabType, page: number, sortBy: SortOption) => {
+    const loadingMap = {
+      phrases: phraseLoading,
+      definitions: definitionLoading,
+      examples: exampleLoading,
+    };
+
+    const hasMoreMap = {
+      phrases: phraseHasMore,
+      definitions: definitionHasMore,
+      examples: exampleHasMore,
+    };
+
+    if (loadingMap[type] || !hasMoreMap[type]) return;
+
+    const setLoadingMap = {
+      phrases: setPhraseLoading,
+      definitions: setDefinitionLoading,
+      examples: setExampleLoading,
+    };
+
+    setLoadingMap[type](true);
+
+    try {
+      const url = `/api/contributions?page=${page}&limit=10&type=${type}&sortBy=${sortBy}${userId ? `&userId=${userId}` : ''}`;
+      const response = await fetch(url);
+      const data: APIResponse = await response.json();
+      
+      if (data.data && data.data.length > 0) {
+        // Convert date strings to Date objects
+        const dataWithDates = data.data.map((item) => ({
+          ...item,
+          createdAt: new Date(item.createdAt),
+        }));
+
+        // Update counts if provided in response
+        if (data.totalCounts) {
+          setCounts(data.totalCounts);
+        }
+
+        if (type === "phrases") {
+          setPhrases(prev => [...prev, ...dataWithDates as Phrase[]]);
+          setPhrasePage(prev => prev + 1);
+          setPhraseHasMore(data.hasMore);
+        } else if (type === "definitions") {
+          setDefinitions(prev => [...prev, ...dataWithDates as Definition[]]);
+          setDefinitionPage(prev => prev + 1);
+          setDefinitionHasMore(data.hasMore);
+        } else if (type === "examples") {
+          setExamples(prev => [...prev, ...dataWithDates as Example[]]);
+          setExamplePage(prev => prev + 1);
+          setExampleHasMore(data.hasMore);
+        }
+      } else {
+        if (type === "phrases") setPhraseHasMore(false);
+        else if (type === "definitions") setDefinitionHasMore(false);
+        else if (type === "examples") setExampleHasMore(false);
       }
-    });
+    } catch (error) {
+      console.error(`Error loading more ${type}:`, error);
+    } finally {
+      setLoadingMap[type](false);
+    }
+  }, [phraseLoading, definitionLoading, exampleLoading, phraseHasMore, definitionHasMore, exampleHasMore, userId]);
+
+  // Handle sort changes - reset data and fetch from beginning
+  const handleSortChange = async (type: TabType, newSort: SortOption) => {
+    if (type === "phrases") {
+      setPhraseSort(newSort);
+      setPhrases([]); // Clear existing data
+      setPhrasePage(2); // Reset to 2 since we'll load page 1
+      setPhraseHasMore(true);
+    } else if (type === "definitions") {
+      setDefinitionSort(newSort);
+      setDefinitions([]);
+      setDefinitionPage(2);
+      setDefinitionHasMore(true);
+    } else if (type === "examples") {
+      setExampleSort(newSort);
+      setExamples([]);
+      setExamplePage(2);
+      setExampleHasMore(true);
+    }
+
+    // Load first page with new sort
+    await loadMoreContributions(type, 1, newSort);
   };
 
-  const sortDefinitions = (definitions: Definition[], sortBy: SortOption) => {
-    return [...definitions].sort((a, b) => {
-      switch (sortBy) {
-        case "recent":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        case "oldest":
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-        case "upvotes":
-          const aVotes = a.votes.reduce((sum, vote) => sum + vote.value, 0);
-          const bVotes = b.votes.reduce((sum, vote) => sum + vote.value, 0);
-          return bVotes - aVotes;
-        default:
-          return 0;
+  // Infinite scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.innerHeight + document.documentElement.scrollTop 
+          >= document.documentElement.offsetHeight - 1000) {
+        const sortMap = {
+          phrases: phraseSort,
+          definitions: definitionSort,
+          examples: exampleSort,
+        };
+        const pageMap = {
+          phrases: phrasePage,
+          definitions: definitionPage,
+          examples: examplePage,
+        };
+        
+        loadMoreContributions(activeTab, pageMap[activeTab], sortMap[activeTab]);
       }
-    });
-  };
+    };
 
-  const sortExamples = (examples: Example[], sortBy: SortOption) => {
-    return [...examples].sort((a, b) => {
-      switch (sortBy) {
-        case "recent":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        case "oldest":
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-        case "upvotes":
-          const aVotes = a.votes.reduce((sum, vote) => sum + vote.value, 0);
-          const bVotes = b.votes.reduce((sum, vote) => sum + vote.value, 0);
-          return bVotes - aVotes;
-        default:
-          return 0;
-      }
-    });
-  };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [loadMoreContributions, activeTab, phrasePage, definitionPage, examplePage, phraseSort, definitionSort, exampleSort]);
 
-  const sortedPhrases = sortPhrases(phrases, phraseSort);
-  const sortedDefinitions = sortDefinitions(definitions, definitionSort);
-  const sortedExamples = sortExamples(examples, exampleSort);
-
-  const SortDropdown = ({ value, onChange, id }: { value: SortOption; onChange: (value: SortOption) => void; id: string }) => (
+  const SortDropdown = ({ value, onChange, id }: { 
+    value: SortOption; 
+    onChange: (value: SortOption) => void; 
+    id: string;
+  }) => (
     <div className="flex items-center gap-2">
       <ArrowUpDown className="w-4 h-4" />
-      <Select value={value} onValueChange={onChange}>
+      <Select value={value} onValueChange={(newValue: SortOption) => onChange(newValue)}>
         <SelectTrigger className="w-[140px]" id={id}>
           <SelectValue />
         </SelectTrigger>
@@ -165,37 +271,37 @@ export default function SortableContributions({ phrases, definitions, examples }
           Contributions
         </CardTitle>
         <CardDescription>
-          Track all your contributions to the community
+          Track all contributions to the community
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="phrases" className="w-full">
+        <Tabs defaultValue="phrases" className="w-full" onValueChange={(value) => setActiveTab(value as TabType)}>
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="phrases">Phrases ({phrases.length})</TabsTrigger>
-            <TabsTrigger value="definitions">Definitions ({definitions.length})</TabsTrigger>
-            <TabsTrigger value="examples">Examples ({examples.length})</TabsTrigger>
+            <TabsTrigger value="phrases">Phrases ({counts.phrases})</TabsTrigger>
+            <TabsTrigger value="definitions">Definitions ({counts.definitions})</TabsTrigger>
+            <TabsTrigger value="examples">Examples ({counts.examples})</TabsTrigger>
           </TabsList>
           
           <TabsContent value="phrases" className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Your Phrases</h3>
+              <h3 className="text-lg font-semibold">Phrases</h3>
               <SortDropdown 
                 value={phraseSort} 
-                onChange={setPhraseSort}
+                onChange={(newSort) => handleSortChange("phrases", newSort)}
                 id="phrase-sort"
               />
             </div>
             
-            {sortedPhrases.length === 0 ? (
+            {phrases.length === 0 && !phraseLoading ? (
               <div className="text-center py-8 text-muted-foreground">
-                <p>You haven&apos;t submitted any phrases yet.</p>
+                <p>No phrases submitted yet.</p>
                 <Link href="/submit" className="text-primary hover:underline">
                   Submit your first phrase
                 </Link>
               </div>
             ) : (
               <div className="space-y-4">
-                {sortedPhrases.map((phrase) => {
+                {phrases.map((phrase) => {
                   const totalVotes = phrase.definitions.reduce((total, def) => 
                     total + def.votes.reduce((sum, vote) => sum + vote.value, 0), 0
                   );
@@ -240,30 +346,42 @@ export default function SortableContributions({ phrases, definitions, examples }
                     </Card>
                   );
                 })}
+                
+                {phraseLoading && (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                  </div>
+                )}
+                
+                {!phraseHasMore && phrases.length > 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    You&apos;ve seen all phrases!
+                  </div>
+                )}
               </div>
             )}
           </TabsContent>
           
           <TabsContent value="definitions" className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Your Definitions</h3>
+              <h3 className="text-lg font-semibold">Definitions</h3>
               <SortDropdown 
                 value={definitionSort} 
-                onChange={setDefinitionSort}
+                onChange={(newSort) => handleSortChange("definitions", newSort)}
                 id="definition-sort"
               />
             </div>
             
-            {sortedDefinitions.length === 0 ? (
+            {definitions.length === 0 && !definitionLoading ? (
               <div className="text-center py-8 text-muted-foreground">
-                <p>You haven&apos;t contributed any definitions yet.</p>
+                <p>No definitions contributed yet.</p>
                 <Link href="/submit" className="text-primary hover:underline">
                   Add your first definition
                 </Link>
               </div>
             ) : (
               <div className="space-y-4">
-                {sortedDefinitions.map((def) => {
+                {definitions.map((def) => {
                   const voteScore = def.votes.reduce((sum, vote) => sum + vote.value, 0);
                   
                   return (
@@ -302,30 +420,42 @@ export default function SortableContributions({ phrases, definitions, examples }
                     </Card>
                   );
                 })}
+                
+                {definitionLoading && (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                  </div>
+                )}
+                
+                {!definitionHasMore && definitions.length > 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    You&apos;ve seen all definitions!
+                  </div>
+                )}
               </div>
             )}
           </TabsContent>
           
           <TabsContent value="examples" className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Your Examples</h3>
+              <h3 className="text-lg font-semibold">Examples</h3>
               <SortDropdown 
                 value={exampleSort} 
-                onChange={setExampleSort}
+                onChange={(newSort) => handleSortChange("examples", newSort)}
                 id="example-sort"
               />
             </div>
             
-            {sortedExamples.length === 0 ? (
+            {examples.length === 0 && !exampleLoading ? (
               <div className="text-center py-8 text-muted-foreground">
-                <p>You haven&apos;t contributed any examples yet.</p>
+                <p>No examples contributed yet.</p>
                 <Link href="/submit" className="text-primary hover:underline">
                   Add your first example
                 </Link>
               </div>
             ) : (
               <div className="space-y-4">
-                {sortedExamples.map((example) => {
+                {examples.map((example) => {
                   const voteScore = example.votes.reduce((sum, vote) => sum + vote.value, 0);
                   
                   return (
@@ -367,6 +497,18 @@ export default function SortableContributions({ phrases, definitions, examples }
                     </Card>
                   );
                 })}
+                
+                {exampleLoading && (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                  </div>
+                )}
+                
+                {!exampleHasMore && examples.length > 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    You&apos;ve seen all examples!
+                  </div>
+                )}
               </div>
             )}
           </TabsContent>
