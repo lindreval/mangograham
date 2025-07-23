@@ -2,7 +2,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import PhraseCard from "@/components/PhraseCard";
+import InfiniteScrollLanguages from "@/components/InfiniteScrollLanguages";
 import type { PhraseWithLang } from "@/components/PhraseCard";
 
 export async function generateMetadata({
@@ -44,7 +44,7 @@ export default async function LanguagePage({
     return notFound();
   }
 
-  // Get all phrases for this language with approved definitions
+  // Get first 20 phrases for this language with approved definitions
   const phrases = await prisma.phrase.findMany({
     where: {
       languageId: language.id,
@@ -56,11 +56,17 @@ export default async function LanguagePage({
         },
       },
     },
+    take: 20,
     include: {
       language: {
         select: {
           name: true,
           isoCode: true,
+        },
+      },
+      tags: {
+        include: {
+          tag: true,
         },
       },
       definitions: {
@@ -73,6 +79,16 @@ export default async function LanguagePage({
           votes: true,
           author: {
             select: { name: true, email: true },
+          },
+          examples: {
+            where: {
+              status: {
+                in: ["approved", "pending"],
+              },
+            },
+            include: {
+              votes: true,
+            },
           },
         },
       },
@@ -103,14 +119,11 @@ export default async function LanguagePage({
           </p>
         </div>
       ) : (
-        <div className="grid gap-4">
-          {phrases.map((phrase) => (
-            <PhraseCard 
-              key={phrase.id} 
-              phrase={phrase as PhraseWithLang} 
-            />
-          ))}
-        </div>
+        <InfiniteScrollLanguages 
+          mode="phrases"
+          initialPhrases={phrases as PhraseWithLang[]}
+          languageId={language.id}
+        />
       )}
     </main>
   );

@@ -29,6 +29,11 @@ export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
     log: ["error"], // suppress noisy "query" logs
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL,
+      },
+    },
   });
 
 // ✅ During development reuse the same instance on every hot reload.

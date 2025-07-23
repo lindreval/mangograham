@@ -8,10 +8,11 @@ import { useRouter } from "next/navigation";
 interface FlagButtonProps {
   definitionId?: number;
   exampleId?: number;
+  phraseId?: number;
   onFlagged?: () => void;
 }
 
-export default function FlagButton({ definitionId, exampleId, onFlagged }: FlagButtonProps) {
+export default function FlagButton({ definitionId, exampleId, phraseId, onFlagged }: FlagButtonProps) {
   const { data: session } = useSession();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -34,7 +35,7 @@ export default function FlagButton({ definitionId, exampleId, onFlagged }: FlagB
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ definitionId, exampleId }),
+        body: JSON.stringify({ definitionId, exampleId, phraseId }),
       });
 
       if (response.ok) {
@@ -44,20 +45,27 @@ export default function FlagButton({ definitionId, exampleId, onFlagged }: FlagB
         router.refresh();
       } else {
         const error = await response.json();
-        alert(error.error || 'Failed to flag definition');
+        alert(error.error || 'Failed to flag content');
       }
     } catch (error) {
-      console.error('Error flagging definition:', error);
-      alert('An error occurred while flagging the definition');
+      console.error('Error flagging content:', error);
+      alert('An error occurred while flagging the content');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const getTitle = () => {
+    if (phraseId) return "Report this phrase";
+    if (definitionId) return "Report this definition";
+    if (exampleId) return "Report this example";
+    return "Report this content";
+  };
+
   return (
     <button
       type="button"
-      title="Report this definition"
+      title={getTitle()}
       disabled={isLoading || isFlagged}
       className={`flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors ${
         isFlagged 

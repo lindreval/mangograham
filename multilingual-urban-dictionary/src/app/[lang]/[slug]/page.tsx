@@ -6,6 +6,7 @@ import { getServerSession } from "next-auth";
 import { authConfig } from "@/lib/auth";
 import Link from "next/link";
 import FlagButton from "@/components/FlagButton";
+import AdminEditButton from "@/components/AdminEditButton";
 
 export async function generateMetadata({
   params,
@@ -34,11 +35,17 @@ export default async function PhrasePage({
   // Get current user session
   const session = await getServerSession(authConfig);
   const userId = session?.user?.id;
+  const isAdmin = session?.user?.role === 'admin';
 
   const phrase = await prisma.phrase.findUnique({
     where: { slug },
     include: {
       language: true,
+      tags: {
+        include: {
+          tag: true,
+        },
+      },
       definitions: {
         where: { status: {in: ["approved", "pending"],} },
         include: {
@@ -91,6 +98,14 @@ export default async function PhrasePage({
             <p className="text-xs md:text-sm text-muted-foreground mt-1">
               Pronunciation: {phrase.pronunciation}
             </p>
+          )}
+          {userId && (
+            <div className="mt-3 flex justify-between items-center">
+              {isAdmin && <AdminEditButton phraseId={phrase.id} />}
+              <div className={isAdmin ? '' : 'ml-auto'}>
+                <FlagButton phraseId={phrase.id} />
+              </div>
+            </div>
           )}
         </div>
         {userId && (
@@ -200,6 +215,24 @@ export default async function PhrasePage({
             );
           })}
         </ul>
+      )}
+      
+      {/* Tags Section */}
+      {phrase.tags && phrase.tags.length > 0 && (
+        <div className="rounded-lg border-4 bg-card text-card-foreground p-4 md:p-6 shadow-elevation-medium">
+          <h3 className="text-lg font-semibold mb-3">Tags</h3>
+          <div className="flex flex-wrap gap-2">
+            {phrase.tags.map((phraseTag) => (
+              <span
+                key={phraseTag.tag.id}
+                className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-white"
+                style={{ backgroundColor: phraseTag.tag.color || '#3B82F6' }}
+              >
+                {phraseTag.tag.name}
+              </span>
+            ))}
+          </div>
+        </div>
       )}
     </main>
   );

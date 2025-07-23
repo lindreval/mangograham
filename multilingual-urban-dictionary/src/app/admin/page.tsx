@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { Definition, Example } from "@prisma/client";
+import { Definition, Example, Phrase } from "@prisma/client";
 import type { Session } from "next-auth";
 
 interface CustomSession extends Session {
@@ -17,6 +17,15 @@ interface CustomSession extends Session {
 }
 
 // ✅ Fix: Define a reusable type to avoid inline typing + ESLint error
+type PendingPhrase = Phrase & {
+  language: {
+    name: string;
+  };
+  definitions: {
+    body: string;
+  }[];
+};
+
 type PendingDefinition = Definition & {
   phrase: {
     textOriginal: string;
@@ -55,9 +64,27 @@ export default async function AdminPage() {
 
   console.log("you are an admin");
 
-  const [pendingDefs, pendingExamples] = await Promise.all([
+  const [pendingPhrases, pendingDefs, pendingExamples] = await Promise.all([
+    prisma.phrase.findMany({
+      where: { 
+        status: {
+          in: ["pending", "needs review"]
+        }
+      },
+      include: {
+        language: true,
+        definitions: {
+          select: { body: true },
+        },
+      },
+      orderBy: { createdAt: "asc" },
+    }),
     prisma.definition.findMany({
-      where: { status: "pending" },
+      where: { 
+        status: {
+          in: ["pending", "needs review"]
+        }
+      },
       include: {
         phrase: {
           include: {
@@ -69,7 +96,11 @@ export default async function AdminPage() {
       orderBy: { createdAt: "asc" },
     }),
     prisma.example.findMany({
-      where: { status: "pending" },
+      where: { 
+        status: {
+          in: ["pending", "needs review"]
+        }
+      },
       include: {
         definition: {
           include: {
@@ -89,18 +120,101 @@ export default async function AdminPage() {
     <main className="mx-auto max-w-4xl space-y-8 p-6">
       <h1 className="text-2xl font-bold">Moderation Queue</h1>
 
-      {/* Pending Definitions Section */}
+      {/* Pending/Needs Review Phrases Section */}
       <section className="space-y-4">
-        <h2 className="text-xl font-semibold text-blue-600">Pending Definitions ({pendingDefs.length})</h2>
+        <h2 className="text-xl font-semibold text-purple-600">Phrases Awaiting Review ({pendingPhrases.length})</h2>
+        {pendingPhrases.length === 0 ? (
+          <p className="text-muted-foreground">No phrases awaiting review 🎉</p>
+        ) : (
+          <ul className="space-y-4">
+            {pendingPhrases.map((phrase: PendingPhrase) => (
+              <li key={phrase.id} className="rounded border p-4 shadow-sm bg-purple-50">
+                <div className="mb-2 text-sm text-muted-foreground">
+                  <span className={`inline-block px-2 py-1 text-xs rounded-full mr-2 ${
+                    phrase.status === 'needs review' 
+                      ? 'bg-red-100 text-red-800' 
+                      : 'bg-purple-100 text-purple-800'
+                  }`}>
+                    {phrase.status === 'needs review' ? 'Needs Review' : 'Pending Phrase'}
+                  </span>
+                  <strong>{phrase.textOriginal}</strong> —{" "}
+                  {phrase.language.name}
+                </div>
+                {phrase.partOfSpeech && (
+                  <p className="mb-2 text-sm text-muted-foreground">
+                    <strong>Part of Speech:</strong> {phrase.partOfSpeech}
+                  </p>
+                )}
+                {phrase.pronunciation && (
+                  <p className="mb-2 text-sm text-muted-foreground">
+                    <strong>Pronunciation:</strong> {phrase.pronunciation}
+                  </p>
+                )}
+                {phrase.transliteration && (
+                  <p className="mb-2 text-sm text-muted-foreground">
+                    <strong>Transliteration:</strong> {phrase.transliteration}
+                  </p>
+                )}
+                {phrase.definitions.length > 0 && (
+                  <div className="mb-2 text-sm space-y-1">
+                    <strong>Definitions:</strong>
+                    {phrase.definitions.map((def, i) => (
+                      <p key={i} className="ml-4 italic">• {def.body}</p>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <form
+                    action={async () => {
+                      "use server";
+                      await prisma.phrase.update({
+                        where: { id: phrase.id },
+                        data: { status: "approved" },
+                      });
+                      revalidatePath("/admin");
+                    }}
+                  >
+                    <button className="rounded bg-green-600 px-4 py-1 text-white hover:bg-green-700">
+                      Approve
+                    </button>
+                  </form>
+                  <form
+                    action={async () => {
+                      "use server";
+                      await prisma.phrase.update({
+                        where: { id: phrase.id },
+                        data: { status: "rejected" },
+                      });
+                      revalidatePath("/admin");
+                    }}
+                  >
+                    <button className="rounded bg-red-600 px-4 py-1 text-white hover:bg-red-700">
+                      Reject
+                    </button>
+                  </form>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* Pending/Needs Review Definitions Section */}
+      <section className="space-y-4">
+        <h2 className="text-xl font-semibold text-blue-600">Definitions Awaiting Review ({pendingDefs.length})</h2>
         {pendingDefs.length === 0 ? (
-          <p className="text-muted-foreground">No pending definitions 🎉</p>
+          <p className="text-muted-foreground">No definitions awaiting review 🎉</p>
         ) : (
           <ul className="space-y-4">
             {pendingDefs.map((def: PendingDefinition) => (
               <li key={def.id} className="rounded border p-4 shadow-sm bg-blue-50">
                 <div className="mb-2 text-sm text-muted-foreground">
-                  <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full mr-2">
-                    Pending Definition
+                  <span className={`inline-block px-2 py-1 text-xs rounded-full mr-2 ${
+                    def.status === 'needs review' 
+                      ? 'bg-red-100 text-red-800' 
+                      : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    {def.status === 'needs review' ? 'Needs Review' : 'Pending Definition'}
                   </span>
                   <strong>{def.phrase.textOriginal}</strong> —{" "}
                   {def.phrase.language.name}
@@ -152,18 +266,22 @@ export default async function AdminPage() {
         )}
       </section>
 
-      {/* Pending Examples Section */}
+      {/* Pending/Needs Review Examples Section */}
       <section className="space-y-4">
-        <h2 className="text-xl font-semibold text-orange-600">Pending Examples ({pendingExamples.length})</h2>
+        <h2 className="text-xl font-semibold text-orange-600">Examples Awaiting Review ({pendingExamples.length})</h2>
         {pendingExamples.length === 0 ? (
-          <p className="text-muted-foreground">No pending examples 🎉</p>
+          <p className="text-muted-foreground">No examples awaiting review 🎉</p>
         ) : (
           <ul className="space-y-4">
             {pendingExamples.map((ex: PendingExample) => (
               <li key={ex.id} className="rounded border p-4 shadow-sm bg-orange-50">
                 <div className="mb-2 text-sm text-muted-foreground">
-                  <span className="inline-block px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded-full mr-2">
-                    Pending Example
+                  <span className={`inline-block px-2 py-1 text-xs rounded-full mr-2 ${
+                    ex.status === 'needs review' 
+                      ? 'bg-red-100 text-red-800' 
+                      : 'bg-orange-100 text-orange-800'
+                  }`}>
+                    {ex.status === 'needs review' ? 'Needs Review' : 'Pending Example'}
                   </span>
                   <strong>{ex.definition.phrase.textOriginal}</strong> —{" "}
                   {ex.definition.phrase.language.name}
