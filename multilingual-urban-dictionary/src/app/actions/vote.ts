@@ -68,18 +68,23 @@ export async function voteOnDefinition(definitionId: number, value: number) {
       select: { authorId: true }
     });
 
+    // Collect all newly awarded achievements
+    const achievements = [];
+    
     if (definition?.authorId) {
       await updateUserReputation(definition.authorId);
       
       // Check achievements for content author (receiving votes)
-      await AchievementService.checkAndAwardAchievements(definition.authorId, 'VOTE_RECEIVED');
+      const authorAchievements = await AchievementService.checkAndAwardAchievements(definition.authorId, 'VOTE_RECEIVED');
+      achievements.push(...authorAchievements);
     }
 
     // Check achievements for voter (casting votes)
-    await AchievementService.checkAndAwardAchievements(session.user.id, 'VOTE_CAST');
+    const voterAchievements = await AchievementService.checkAndAwardAchievements(session.user.id, 'VOTE_CAST');
+    achievements.push(...voterAchievements);
 
     revalidatePath(`/`);
-    return { success: true };
+    return { success: true, achievements };
   } catch (error) {
     console.error("Vote error:", error);
     return { error: "Failed to record vote. Please try again." };
@@ -147,18 +152,23 @@ export async function voteOnExample(exampleId: number, value: number) {
       select: { authorId: true }
     });
 
+    // Collect all newly awarded achievements
+    const achievements = [];
+    
     if (example?.authorId) {
       await updateUserReputation(example.authorId);
       
       // Check achievements for content author (receiving votes)
-      await AchievementService.checkAndAwardAchievements(example.authorId, 'VOTE_RECEIVED');
+      const authorAchievements = await AchievementService.checkAndAwardAchievements(example.authorId, 'VOTE_RECEIVED');
+      achievements.push(...authorAchievements);
     }
 
     // Check achievements for voter (casting votes)
-    await AchievementService.checkAndAwardAchievements(session.user.id, 'VOTE_CAST');
+    const voterAchievements = await AchievementService.checkAndAwardAchievements(session.user.id, 'VOTE_CAST');
+    achievements.push(...voterAchievements);
 
     revalidatePath(`/`);
-    return { success: true };
+    return { success: true, achievements };
   } catch (error) {
     console.error("Vote error:", error);
     return { error: "Failed to record vote. Please try again." };

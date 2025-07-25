@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authConfig } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { AchievementService } from "@/lib/achievements";
 
 export async function PUT(request: NextRequest) {
   try {
@@ -45,9 +46,13 @@ export async function PUT(request: NextRequest) {
       },
     });
 
+    // Check for profile completion achievement
+    const achievements = await AchievementService.checkAndAwardAchievements(session.user.id, 'PROFILE_UPDATED');
+
     return NextResponse.json({ 
       message: "Profile updated successfully",
-      user: updatedUser 
+      user: updatedUser,
+      achievements 
     });
 
   } catch (error) {

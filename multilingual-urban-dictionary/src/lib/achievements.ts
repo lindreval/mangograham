@@ -97,6 +97,7 @@ export class AchievementService {
 
   /**
    * Check and award achievements for a user based on trigger type
+   * Returns the newly awarded achievements for potential notification display
    */
   static async checkAndAwardAchievements(userId: string, triggerType: string): Promise<Achievement[]> {
     try {
@@ -276,7 +277,7 @@ export class AchievementService {
       // Profile completion check
       const profileCompleted = !!(user.bio && user.languagesSpoken.length > 0);
 
-      // Return visit check (simplified - in real implementation, track sessions)
+      // Return visit check - user must have been a member for at least 1 day and not have the achievement yet
       const returnVisit = daysSinceMembership > 0;
 
       return {

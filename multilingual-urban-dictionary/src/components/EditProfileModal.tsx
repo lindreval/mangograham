@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { AchievementNotificationService } from "@/lib/achievementNotificationService";
 import {
   Dialog,
   DialogContent,
@@ -78,6 +79,13 @@ export default function EditProfileModal({ user }: EditProfileModalProps) {
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to update profile");
+      }
+
+      const data = await response.json();
+      
+      // Handle achievements from profile update
+      if (data.achievements && data.achievements.length > 0) {
+        AchievementNotificationService.handleServerActionAchievements(data.achievements);
       }
 
       await update();

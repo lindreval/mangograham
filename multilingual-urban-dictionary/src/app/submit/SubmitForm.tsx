@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { createSubmission } from "./actions";
 import { useState } from "react";
 import TagSelector from "@/components/TagSelector";
+import { AchievementNotificationService } from "@/lib/achievementNotificationService";
 
 interface Language {
   id: number;
@@ -63,6 +64,12 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
       console.log("Calling createSubmission");
       const result = await createSubmission(formData);
       console.log("createSubmission completed", result);
+      
+      // Handle achievements before redirect
+      if (result?.achievements && result.achievements.length > 0) {
+        // Store achievements for display after redirect
+        AchievementNotificationService.storeForLaterNotification(result.achievements);
+      }
       
       // Redirect back to the phrase page after successful submission
       if (result && result.slug) {

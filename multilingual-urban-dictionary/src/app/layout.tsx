@@ -57,6 +57,8 @@ import { GeistSans, GeistMono } from "geist/font";  // ← import the font insta
 import "./globals.css";
 import Providers from "./providers";
 import NavBar from "@/components/NavBar";
+import { Toaster } from "@/components/ui/toaster";
+import { AchievementChecker } from "@/components/achievements/AchievementChecker";
 import { Suspense } from "react";
 import { Analytics  } from "@vercel/analytics/next";
 
@@ -134,6 +136,8 @@ export default function RootLayout({
             <NavBar />
           </Suspense>
           {children}
+          <AchievementChecker />
+          <Toaster />
         </Providers>
       </body>
     </html>

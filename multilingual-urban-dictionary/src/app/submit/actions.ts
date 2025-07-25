@@ -172,18 +172,22 @@ export async function createSubmission(formData: FormData) {
     console.warn('Failed to update user reputation:', error);
   }
 
-  // Check achievements outside transaction
+  // Check achievements outside transaction and collect them
+  const achievements = [];
   try {
     if (isAddingExample) {
       // Just added an example
-      await AchievementService.checkAndAwardAchievements(userId, 'EXAMPLE_CREATED');
+      const exampleAchievements = await AchievementService.checkAndAwardAchievements(userId, 'EXAMPLE_CREATED');
+      achievements.push(...exampleAchievements);
     } else {
       // Added definition (and possibly phrase)
-      await AchievementService.checkAndAwardAchievements(userId, 'DEFINITION_CREATED');
+      const definitionAchievements = await AchievementService.checkAndAwardAchievements(userId, 'DEFINITION_CREATED');
+      achievements.push(...definitionAchievements);
       
       // If we created a new phrase, check phrase creation achievements
       if (result && typeof result === 'object' && 'createdNewPhrase' in result && result.createdNewPhrase) {
-        await AchievementService.checkAndAwardAchievements(userId, 'PHRASE_CREATED');
+        const phraseAchievements = await AchievementService.checkAndAwardAchievements(userId, 'PHRASE_CREATED');
+        achievements.push(...phraseAchievements);
       }
     }
   } catch (error) {
@@ -207,14 +211,15 @@ export async function createSubmission(formData: FormData) {
     }
   }
 
-  // Always return complete phrase data with language for URL construction
+  // Always return complete phrase data with language for URL construction, plus achievements
   if (result) {
+    let phraseData;
     if (typeof result === 'object' && 'phrase' in result) {
-      // Return the phrase from the complex result
-      return result.phrase;
+      // Get the phrase from the complex result
+      phraseData = result.phrase;
     } else {
       // Return the phrase directly, adding language data if needed
-      return await prisma.phrase.findUnique({
+      phraseData = await prisma.phrase.findUnique({
         where: { id: result.id },
         include: {
           language: {
@@ -223,7 +228,13 @@ export async function createSubmission(formData: FormData) {
         }
       });
     }
+    
+    // Return phrase data with achievements
+    return { ...phraseData, achievements };
   }
   
-  return result;
+  if (result && typeof result === 'object') {
+    return { ...(result as Record<string, unknown>), achievements };
+  }
+  return { achievements };
 }

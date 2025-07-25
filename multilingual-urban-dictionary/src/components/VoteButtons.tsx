@@ -4,6 +4,7 @@
 import { useTransition } from "react";
 import { voteOnDefinition, voteOnExample } from "@/app/actions/vote";
 import { ChevronUp, ChevronDown } from "lucide-react";
+import { AchievementNotificationService } from "@/lib/achievementNotificationService";
 
 export default function VoteButtons({
   score,
@@ -30,6 +31,9 @@ export default function VoteButtons({
 
         if (result?.error) {
           alert(result.error);
+        } else if (result?.achievements && result.achievements.length > 0) {
+          // Show achievement notifications for newly unlocked achievements
+          AchievementNotificationService.handleServerActionAchievements(result.achievements);
         }
       } catch (error) {
         console.error("Vote error:", error);
