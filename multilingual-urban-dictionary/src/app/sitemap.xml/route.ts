@@ -3,15 +3,23 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   const baseUrl = process.env.NEXTAUTH_URL || "https://yungsalita.com";
   
-  // Get all approved phrases
-  const phrases = await prisma.phrase.findMany({
-    where: { status: "approved" },
-    include: { language: true },
-    orderBy: { updatedAt: "desc" },
-  });
+  let phrases: Array<{ slug: string; updatedAt: Date; language: { isoCode: string } }> = [];
+  let languages: Array<{ isoCode: string }> = [];
+  
+  try {
+    // Get all approved phrases
+    phrases = await prisma.phrase.findMany({
+      where: { status: "approved" },
+      include: { language: true },
+      orderBy: { updatedAt: "desc" },
+    });
 
-  // Get all languages
-  const languages = await prisma.language.findMany();
+    // Get all languages
+    languages = await prisma.language.findMany();
+  } catch (error) {
+    // Handle database connection errors during build
+    console.warn("Database not available for sitemap generation:", error);
+  }
 
   const staticPages = [
     "",

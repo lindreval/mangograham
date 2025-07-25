@@ -11,10 +11,16 @@ export const metadata: Metadata = {
 export const revalidate = 300; // 5-min ISR
 
 export default async function LanguagesPage() {
-  const languages = await prisma.language.findMany({
-    include: { _count: { select: { phrases: true } } },
-    orderBy: { name: "asc" },
-  });
+  let languages: Array<{ id: number; name: string; isoCode: string; _count: { phrases: number } }> = [];
+
+  try {
+    languages = await prisma.language.findMany({
+      include: { _count: { select: { phrases: true } } },
+      orderBy: { name: "asc" },
+    });
+  } catch (error) {
+    console.warn("Database not available during build:", error);
+  }
 
   return (
     <main className="mx-auto max-w-4xl space-y-4 p-4">
