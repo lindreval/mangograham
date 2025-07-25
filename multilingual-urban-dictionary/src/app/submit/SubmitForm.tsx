@@ -5,6 +5,7 @@ import { createSubmission } from "./actions";
 import { useState } from "react";
 import TagSelector from "@/components/TagSelector";
 import { AchievementNotificationService } from "@/lib/achievementNotificationService";
+import { triggerAchievementPolling } from "@/hooks/useAchievementPolling";
 
 interface Language {
   id: number;
@@ -70,6 +71,9 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
         // Store achievements for display after redirect
         AchievementNotificationService.storeForLaterNotification(result.achievements);
       }
+      
+      // Trigger achievement polling for background achievements
+      triggerAchievementPolling();
       
       // Redirect back to the phrase page after successful submission
       if (result && result.slug) {

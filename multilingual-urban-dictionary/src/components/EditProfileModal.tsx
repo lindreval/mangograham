@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AchievementNotificationService } from "@/lib/achievementNotificationService";
+import { triggerAchievementPolling } from "@/hooks/useAchievementPolling";
 import {
   Dialog,
   DialogContent,
@@ -87,6 +88,9 @@ export default function EditProfileModal({ user }: EditProfileModalProps) {
       if (data.achievements && data.achievements.length > 0) {
         AchievementNotificationService.handleServerActionAchievements(data.achievements);
       }
+      
+      // Trigger achievement polling for any background achievements
+      triggerAchievementPolling();
 
       await update();
       setIsOpen(false);

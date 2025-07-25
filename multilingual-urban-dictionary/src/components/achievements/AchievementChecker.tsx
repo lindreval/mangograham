@@ -4,6 +4,7 @@
 import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { AchievementNotificationService } from '@/lib/achievementNotificationService';
+import { useAchievementPolling } from '@/hooks/useAchievementPolling';
 
 async function checkWelcomeBackAchievement(userId: string) {
   try {
@@ -26,6 +27,9 @@ async function checkWelcomeBackAchievement(userId: string) {
 
 export function AchievementChecker() {
   const { data: session } = useSession();
+  
+  // Start background achievement polling
+  useAchievementPolling();
 
   useEffect(() => {
     // Check for stored achievement notifications when component mounts
