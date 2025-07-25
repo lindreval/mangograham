@@ -283,7 +283,7 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
           href="/terms" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="text-blue-600 hover:underline"
+          className="text-primary hover:underline"
         >
           Terms of Service
         </a>

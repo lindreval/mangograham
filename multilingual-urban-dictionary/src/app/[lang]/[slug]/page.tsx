@@ -16,12 +16,43 @@ export async function generateMetadata({
   const { slug } = await params;
   const phrase = await prisma.phrase.findUnique({
     where: { slug },
-    include: { language: true },
+    include: { 
+      language: true,
+      definitions: {
+        where: { status: "approved" },
+        take: 1,
+        orderBy: { createdAt: "desc" }
+      }
+    },
   });
 
+  if (!phrase) {
+    return {
+      title: "Phrase Not Found",
+      description: "The phrase you're looking for doesn't exist.",
+    };
+  }
+
+  const topDefinition = phrase.definitions[0]?.body;
+  const description = topDefinition 
+    ? `${phrase.textOriginal} in ${phrase.language.name}: ${topDefinition.substring(0, 150)}${topDefinition.length > 150 ? '...' : ''}`
+    : `Learn the meaning of '${phrase.textOriginal}' in ${phrase.language.name} on Yung Salita.`;
+
   return {
-    title: phrase?.textOriginal ?? "Phrase",
-    description: `Definition of '${phrase?.textOriginal}' in ${phrase?.language.name}`,
+    title: `${phrase.textOriginal} - ${phrase.language.name} Slang`,
+    description,
+    keywords: [phrase.textOriginal, phrase.language.name, "slang", "definition", "urban dictionary"],
+    openGraph: {
+      title: `${phrase.textOriginal} - ${phrase.language.name} Slang`,
+      description,
+      type: "article",
+      locale: phrase.language.isoCode,
+    },
+    twitter: {
+      card: "summary",
+      title: `${phrase.textOriginal} - ${phrase.language.name} Slang`,
+      description,
+    },
   };
 }
 
@@ -79,8 +110,41 @@ export default async function PhrasePage({
 
   if (!phrase || phrase.language.isoCode !== lang) return notFound();
 
+  // Generate JSON-LD structured data
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'DefinedTerm',
+    name: phrase.textOriginal,
+    description: phrase.definitions[0]?.body || `Definition of ${phrase.textOriginal}`,
+    inLanguage: phrase.language.isoCode,
+    url: `${process.env.NEXTAUTH_URL || 'https://yungsalita.com'}/${phrase.language.isoCode}/${phrase.slug}`,
+    dateCreated: phrase.createdAt.toISOString(),
+    dateModified: phrase.updatedAt.toISOString(),
+    isPartOf: {
+      '@type': 'WebSite',
+      name: 'Yung Salita',
+      url: process.env.NEXTAUTH_URL || 'https://yungsalita.com',
+    },
+    ...(phrase.definitions.length > 0 && {
+      definition: phrase.definitions.map(def => ({
+        '@type': 'Definition',
+        text: def.body,
+        dateCreated: def.createdAt.toISOString(),
+        author: {
+          '@type': 'Person',
+          name: def.author.name || 'Anonymous',
+        },
+      })),
+    }),
+  };
+
   return (
-    <main className="mx-auto max-w-4xl p-4 md:p-6 space-y-4 md:space-y-6">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <main className="mx-auto max-w-4xl p-4 md:p-6 space-y-4 md:space-y-6">
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
         <div className="flex-1 rounded-lg border-4 bg-card text-card-foreground p-4 md:p-6 shadow-elevation-medium">
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground break-words">
@@ -234,6 +298,7 @@ export default async function PhrasePage({
           </div>
         </div>
       )}
-    </main>
+      </main>
+    </>
   );
 }

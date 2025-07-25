@@ -27,7 +27,7 @@ export default function TagSelector({ selectedTags, onTagsChange, disabled }: Ta
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newTagName, setNewTagName] = useState("");
-  const [newTagColor] = useState("#3B82F6");
+  const [newTagColor] = useState("#205C2B");
   const [isCreating, setIsCreating] = useState(false);
 
   // Fetch available tags

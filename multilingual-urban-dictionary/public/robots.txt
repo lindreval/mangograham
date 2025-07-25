@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+
+# Important pages
+Allow: /about
+Allow: /how-to-use
+Allow: /languages
+Allow: /search
+Allow: /terms
+Allow: /privacy
+
+# Block admin and API routes
+Disallow: /admin
+Disallow: /api/
+
+# Block private user actions
+Disallow: /submit
+Disallow: /profile
+
+# Sitemap
+Sitemap: https://yungsalita.com/sitemap.xml
