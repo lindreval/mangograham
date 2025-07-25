@@ -137,6 +137,8 @@ import { prisma } from "@/lib/prisma";
 import LanguageSidebar from "@/components/LanguageSidebar";
 import InfiniteScrollPhrases from "@/components/InfiniteScrollPhrases";
 import type { Metadata } from "next";
+import type { PhraseWithLang } from "@/components/PhraseCard";
+import type { Language } from "@prisma/client";
 
 export const metadata: Metadata = {
   title: "Home",
@@ -146,60 +148,67 @@ export const metadata: Metadata = {
 export const revalidate = 60; // ISR – re-render at most once per minute
 
 export default async function Home() {
-  // Fetch newest 20 phrases + their language name & isoCode + top definitions
-  const phrases = await prisma.phrase.findMany({
-    where: {
-      status: {
-        in: ["approved", "pending"],
-      },
-      definitions: {
-        some: {
-          status: {
-            in: ["approved", "pending"],
+  let phrases: PhraseWithLang[] = [];
+  let languages: Language[] = [];
+
+  try {
+    // Fetch newest 20 phrases + their language name & isoCode + top definitions
+    phrases = await prisma.phrase.findMany({
+      where: {
+        status: {
+          in: ["approved", "pending"],
+        },
+        definitions: {
+          some: {
+            status: {
+              in: ["approved", "pending"],
+            },
           },
         },
       },
-    },
-    orderBy: { createdAt: "desc" },
-    take: 20,
-    include: {
-      language: {
-        select: { id: true, name: true, isoCode: true },
-      },
-      tags: {
-        include: {
-          tag: true,
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      include: {
+        language: {
+          select: { id: true, name: true, isoCode: true },
         },
-      },
-      definitions: {
-        where: {
-          status: {
-            in: ["approved", "pending"],
+        tags: {
+          include: {
+            tag: true,
           },
         },
-        include: {
-          votes: true,
-          author: {
-            select: { name: true, email: true },
+        definitions: {
+          where: {
+            status: {
+              in: ["approved", "pending"],
+            },
           },
-          examples: {
-            where: {
-              status: {
-                in: ["approved", "pending"],
+          include: {
+            votes: true,
+            author: {
+              select: { name: true, email: true },
+            },
+            examples: {
+              where: {
+                status: {
+                  in: ["approved", "pending"],
+                },
+              },
+              include: {
+                votes: true,
               },
             },
-            include: {
-              votes: true,
-            },
           },
         },
       },
-    },
-  });
+    });
 
-  const languages = await prisma.language.findMany({
-    orderBy: { name: "asc" },
-  });
+    languages = await prisma.language.findMany({
+      orderBy: { name: "asc" },
+    });
+  } catch (error) {
+    console.warn("Database not available during build:", error);
+  }
 
   return (
     <main className="mx-auto max-w-6xl p-4">
