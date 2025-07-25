@@ -24,7 +24,7 @@ export default function LanguageSidebar({ languages }: Props) {
           >
             <Link
               href={`/languages`}
-              className="hover:underline hover:text-primary block transition-colors"
+              className="hover:underline"
               onClick={(e) => e.stopPropagation()}
             >
               Languages
@@ -64,7 +64,7 @@ export default function LanguageSidebar({ languages }: Props) {
           >
             <Link
               href={`/languages`}
-              className="hover:underline hover:text-primary transition-colors"
+              className="hover:underline"
               onClick={(e) => e.stopPropagation()}
             >
               Languages
