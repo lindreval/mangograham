@@ -65,9 +65,19 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
       console.log("createSubmission completed", result);
       
       // Redirect back to the phrase page after successful submission
-      if (result && result.slug && result.language) {
+      if (result && result.slug) {
         console.log("Redirecting to phrase page");
-        window.location.href = `/${result.language.isoCode}/${result.slug}`;
+        if ('language' in result && result.language && typeof result.language === 'object' && 'isoCode' in result.language) {
+          window.location.href = `/${result.language.isoCode}/${result.slug}`;
+        } else {
+          // Fallback: use the selected language from form
+          const selectedLanguage = languages.find(lang => lang.id === parseInt(formData.get("languageId") as string));
+          if (selectedLanguage) {
+            window.location.href = `/${selectedLanguage.isoCode}/${result.slug}`;
+          } else {
+            window.location.href = "/";
+          }
+        }
       } else {
         console.log("Redirecting to home page");
         window.location.href = "/";

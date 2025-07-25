@@ -5,6 +5,7 @@ import { authConfig } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import { revalidatePath } from "next/cache";
 import { updateUserReputation } from "@/lib/reputation";
+import { AchievementService } from "@/lib/achievements";
 
 export async function voteOnDefinition(definitionId: number, value: number) {
   try {
@@ -69,7 +70,13 @@ export async function voteOnDefinition(definitionId: number, value: number) {
 
     if (definition?.authorId) {
       await updateUserReputation(definition.authorId);
+      
+      // Check achievements for content author (receiving votes)
+      await AchievementService.checkAndAwardAchievements(definition.authorId, 'VOTE_RECEIVED');
     }
+
+    // Check achievements for voter (casting votes)
+    await AchievementService.checkAndAwardAchievements(session.user.id, 'VOTE_CAST');
 
     revalidatePath(`/`);
     return { success: true };
@@ -142,7 +149,13 @@ export async function voteOnExample(exampleId: number, value: number) {
 
     if (example?.authorId) {
       await updateUserReputation(example.authorId);
+      
+      // Check achievements for content author (receiving votes)
+      await AchievementService.checkAndAwardAchievements(example.authorId, 'VOTE_RECEIVED');
     }
+
+    // Check achievements for voter (casting votes)
+    await AchievementService.checkAndAwardAchievements(session.user.id, 'VOTE_CAST');
 
     revalidatePath(`/`);
     return { success: true };

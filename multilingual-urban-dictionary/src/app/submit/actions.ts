@@ -6,6 +6,7 @@ import { getServerSession } from "next-auth";
 import slugify from "@/lib/slugify";
 import type { Session } from "next-auth";
 import { updateUserReputation } from "@/lib/reputation";
+import { AchievementService } from "@/lib/achievements";
 
 interface CustomSession extends Session {
   user: {
@@ -68,6 +69,9 @@ export async function createSubmission(formData: FormData) {
         definitionId: parseInt(data.definitionId),
       },
     });
+
+    // Check achievements for example creation
+    await AchievementService.checkAndAwardAchievements(userId, 'EXAMPLE_CREATED');
     
     // Return the existing phrase for consistency
     result = await prisma.phrase.findFirst({
@@ -142,19 +146,22 @@ export async function createSubmission(formData: FormData) {
         });
       }
 
-      return phrase;
+      return { phrase, definition, createdNewPhrase: !existingPhrase };
     });
 
     // Add language data to result for URL construction
-    if (result && !('language' in result)) {
-      result = await prisma.phrase.findUnique({
-        where: { id: result.id },
+    if (result && typeof result === 'object' && 'phrase' in result && !('language' in result.phrase)) {
+      const phraseWithLanguage = await prisma.phrase.findUnique({
+        where: { id: result.phrase.id },
         include: {
           language: {
             select: { isoCode: true }
           }
         }
-      }) || result;
+      });
+      if (phraseWithLanguage) {
+        result = { ...result, phrase: phraseWithLanguage };
+      }
     }
   }
 
@@ -165,13 +172,32 @@ export async function createSubmission(formData: FormData) {
     console.warn('Failed to update user reputation:', error);
   }
 
+  // Check achievements outside transaction
+  try {
+    if (isAddingExample) {
+      // Just added an example
+      await AchievementService.checkAndAwardAchievements(userId, 'EXAMPLE_CREATED');
+    } else {
+      // Added definition (and possibly phrase)
+      await AchievementService.checkAndAwardAchievements(userId, 'DEFINITION_CREATED');
+      
+      // If we created a new phrase, check phrase creation achievements
+      if (result && typeof result === 'object' && 'createdNewPhrase' in result && result.createdNewPhrase) {
+        await AchievementService.checkAndAwardAchievements(userId, 'PHRASE_CREATED');
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to check achievements:', error);
+  }
+
   // Create tag associations outside the main transaction to avoid blocking it
   if (result && !isAddingExample && tagIds.length > 0) {
     try {
+      const phraseId = typeof result === 'object' && 'phrase' in result ? result.phrase.id : result.id;
       for (const tagId of tagIds) {
         await prisma.$executeRaw`
           INSERT INTO "PhraseTag" ("phraseId", "tagId", "createdAt")
-          VALUES (${result.id}, ${tagId}, NOW())
+          VALUES (${phraseId}, ${tagId}, NOW())
           ON CONFLICT ("phraseId", "tagId") DO NOTHING
         `;
       }
@@ -183,14 +209,20 @@ export async function createSubmission(formData: FormData) {
 
   // Always return complete phrase data with language for URL construction
   if (result) {
-    return await prisma.phrase.findUnique({
-      where: { id: result.id },
-      include: {
-        language: {
-          select: { isoCode: true }
+    if (typeof result === 'object' && 'phrase' in result) {
+      // Return the phrase from the complex result
+      return result.phrase;
+    } else {
+      // Return the phrase directly, adding language data if needed
+      return await prisma.phrase.findUnique({
+        where: { id: result.id },
+        include: {
+          language: {
+            select: { isoCode: true }
+          }
         }
-      }
-    });
+      });
+    }
   }
   
   return result;

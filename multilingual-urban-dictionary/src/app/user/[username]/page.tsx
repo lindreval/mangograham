@@ -9,6 +9,8 @@ import { CalendarDays, Trophy, TrendingUp } from "lucide-react";
 import InfiniteSortableContributions from "@/components/InfiniteSortableContributions";
 import { calculateUserReputation, getReputationLevel } from "@/lib/reputation";
 import ReputationInfo from "@/components/ReputationInfo";
+import { AchievementService } from "@/lib/achievements";
+import { CompletedAchievementsRow } from "@/components/achievements/AchievementsGrid";
 import Link from "next/link";
 
 interface UserProfilePageProps {
@@ -21,8 +23,8 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
   const { username } = await params;
   const session = await getServerSession(authConfig);
   
-  // Get user data by username and total counts
-  const [userData, totalCounts] = await Promise.all([
+  // Get user data by username, total counts, and achievements
+  const [userData, totalCounts, userAchievements] = await Promise.all([
     prisma.user.findUnique({
       where: { username: username },
       include: {
@@ -97,6 +99,13 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
           }
         })
       ]);
+    }),
+    // Get user achievements (with initialization if needed)
+    prisma.user.findUnique({ where: { username: username } }).then(async (user) => {
+      if (!user) return [];
+      
+      await AchievementService.ensureUserInitialized(user.id);
+      return AchievementService.getUserAchievements(user.id);
     })
   ]);
 
@@ -185,6 +194,25 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
                   <ReputationInfo reputationData={reputationData} reputationLevel={reputationLevel} />
                 </div>
               </div>
+
+              {/* Achievements */}
+              {userAchievements.length > 0 && (
+                <div className="mt-4 pt-4 border-t">
+                  <div className="text-sm font-medium text-muted-foreground mb-2">
+                    Achievements ({userAchievements.filter(ua => ua.isCompleted).length}/{userAchievements.length})
+                  </div>
+                  {userAchievements.filter(ua => ua.isCompleted).length > 0 ? (
+                    <CompletedAchievementsRow 
+                      userAchievements={userAchievements}
+                      maxDisplay={8}
+                    />
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      No achievements unlocked yet.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </CardContent>

@@ -89,27 +89,35 @@ model ExampleVote {
 }
 
 model User {
-  id              String           @id @default(cuid())
-  name            String?
-  username        String?          @unique
-  email           String?          @unique
-  emailVerified   DateTime?
-  image           String?
-  bio             String?
-  location        String?
-  languagesSpoken String[]         @default([])
-  reputation      Int              @default(0)
-  role            String           @default("user")
-  createdAt       DateTime         @default(now())
-  accounts        Account[]
-  definitions     Definition[]     @relation("UserDefinitions")
-  examples        Example[]        @relation("UserExamples")
-  phrases         Phrase[]         @relation("UserPhrases")
-  tags            Tag[]            @relation("UserTags")
-  definitionVotes DefinitionVote[]
-  exampleVotes    ExampleVote[]
-  sessions        Session[]
-  feedback        Feedback[]
+  id                  String           @id @default(cuid())
+  name                String?
+  username            String?          @unique
+  email               String?          @unique
+  emailVerified       DateTime?
+  image               String?
+  bio                 String?
+  location            String?
+  languagesSpoken     String[]         @default([])
+  reputation          Int              @default(0)
+  role                String           @default("user")
+  createdAt           DateTime         @default(now())
+  
+  // Achievement system fields
+  totalAchievements   Int              @default(0)
+  achievementPoints   Int              @default(0)
+  lastAchievementAt   DateTime?
+  
+  // Relations
+  accounts            Account[]
+  definitions         Definition[]     @relation("UserDefinitions")
+  examples            Example[]        @relation("UserExamples")
+  phrases             Phrase[]         @relation("UserPhrases")
+  tags                Tag[]            @relation("UserTags")
+  definitionVotes     DefinitionVote[]
+  exampleVotes        ExampleVote[]
+  sessions            Session[]
+  feedback            Feedback[]
+  userAchievements    UserAchievement[]
 }
 
 model Account {
@@ -178,4 +186,49 @@ model PhraseTag {
   tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([phraseId, tagId])
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  icon        String   // Emoji or icon identifier
+  category    AchievementCategory
+  tier        Int      @default(1)  // For progressive achievements (1, 2, 3)
+  requirements Json    // Flexible criteria storage
+  points      Int      @default(0)  // Bonus reputation points for earning
+  isHidden    Boolean  @default(false) // Secret achievements
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  userAchievements UserAchievement[]
+  
+  @@unique([name, tier])
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+  progress      Int      @default(0)    // Current progress toward achievement
+  maxProgress   Int      @default(1)    // Required progress to unlock
+  isCompleted   Boolean  @default(false)
+  notified      Boolean  @default(false) // Has user been notified of unlock
+  
+  // Relations
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, achievementId])
+}
+
+enum AchievementCategory {
+  REPUTATION    // Migrated tier badges
+  CONTRIBUTION  // Content creation achievements
+  SOCIAL        // Community interaction achievements  
+  LEARNING      // Discovery and exploration achievements
+  MILESTONE     // Time-based and special event achievements
+  HIDDEN        // Secret/Easter egg achievements
 }

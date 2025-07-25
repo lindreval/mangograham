@@ -10,6 +10,8 @@ import EditProfileModal from "@/components/EditProfileModal";
 import InfiniteSortableContributions from "@/components/InfiniteSortableContributions";
 import { calculateUserReputation, getReputationLevel } from "@/lib/reputation";
 import ReputationInfo from "@/components/ReputationInfo";
+import { AchievementService } from "@/lib/achievements";
+import { CompletedAchievementsRow } from "@/components/achievements/AchievementsGrid";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -26,8 +28,8 @@ export default async function ProfilePage() {
 
   const userId = session.user.id;
   
-  // Get user data with their contributions and total counts
-  const [userData, totalCounts] = await Promise.all([
+  // Get user data with their contributions, total counts, and achievements
+  const [userData, totalCounts, userAchievements] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       include: {
@@ -98,13 +100,27 @@ export default async function ProfilePage() {
           votes: true
         }
       })
-    ])
+    ]),
+    // Get user achievements (with initialization)
+    (async () => {
+      await AchievementService.ensureUserInitialized(userId);
+      return AchievementService.getUserAchievements(userId);
+    })()
   ]);
 
   const [allPhrases, allDefinitions, allExamples] = totalCounts;
 
   if (!userData) {
     redirect("/");
+  }
+
+  // Debug: Log achievement data in development
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Profile Debug:', {
+      userId,
+      userAchievementsCount: userAchievements.length,
+      completedCount: userAchievements.filter(ua => ua.isCompleted).length
+    });
   }
 
   // Calculate comprehensive stats using total data
@@ -191,6 +207,29 @@ export default async function ProfilePage() {
                   <TrendingUp className="w-4 h-4" />
                   <ReputationInfo reputationData={reputationData} reputationLevel={reputationLevel} />
                 </div>
+              </div>
+
+              {/* Recent Achievements */}
+              <div className="mt-4 pt-4 border-t">
+                <div className="text-sm font-medium text-muted-foreground mb-2">
+                  Achievements ({userAchievements.length} total, {userAchievements.filter(ua => ua.isCompleted).length} completed)
+                </div>
+                {userAchievements.filter(ua => ua.isCompleted).length > 0 ? (
+                  <CompletedAchievementsRow 
+                    userAchievements={userAchievements}
+                    maxDisplay={6}
+                  />
+                ) : (
+                  <div className="text-sm text-muted-foreground">
+                    No achievements completed yet. Start by creating definitions or voting on content!
+                  </div>
+                )}
+                {/* Debug info */}
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="mt-2 text-xs text-gray-400">
+                    Debug: {userAchievements.length} achievements loaded
+                  </div>
+                )}
               </div>
             </div>
           </div>
