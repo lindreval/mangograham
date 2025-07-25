@@ -57,8 +57,15 @@ export default function PhraseCard({ phrase }: { phrase: PhraseWithLang }) {
         .sort((a, b) => b.score - a.score)[0]
     : null;
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    if (isNSFW && !showNSFW && !session?.user) {
+      e.preventDefault();
+      router.push('/api/auth/signin');
+    }
+  };
+
   return (
-    <Link href={`/${phrase.language.isoCode}/${phrase.slug}`}>
+    <Link href={`/${phrase.language.isoCode}/${phrase.slug}`} onClick={handleCardClick}>
       <article className={`rounded-lg border-4 bg-card text-card-foreground p-4 shadow-elevation-medium hover:bg-accent hover:shadow-elevation-high transition-shadow cursor-pointer relative ${isNSFW && !showNSFW ? 'overflow-hidden' : ''}`}>
         <header className="mb-3 flex items-center justify-between">
           <span className="text-base text-muted-foreground">
