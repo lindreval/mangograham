@@ -138,8 +138,6 @@
   }
   body {
     @apply bg-background text-foreground;
-    
-    /* TEMPORARY: Very visible dots for testing */
     background-image: radial-gradient(circle, #bbbbbb 1px, transparent 2px);
     background-size: 24px 24px;
     background-position: 0 0;

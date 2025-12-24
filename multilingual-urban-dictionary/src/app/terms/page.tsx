@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+// Static page - never needs revalidation
+export const revalidate = false;
+
 export const metadata: Metadata = {
   title: "Terms of Service - Yung Salita",
   description: "Terms of Service for yungsalita.com - A multilingual urban dictionary platform.",

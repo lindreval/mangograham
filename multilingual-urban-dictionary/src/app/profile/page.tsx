@@ -27,9 +27,10 @@ export default async function ProfilePage() {
   }
 
   const userId = session.user.id;
-  
-  // Get user data with their contributions, total counts, and achievements
-  const [userData, totalCounts, userAchievements] = await Promise.all([
+
+  // Get user data with their contributions, counts, and achievements in parallel
+  // Use count queries instead of fetching all data for stats
+  const [userData, counts, voteStats, userAchievements] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       include: {
@@ -76,31 +77,28 @@ export default async function ProfilePage() {
         }
       }
     }),
-    // Get total counts and vote scores for stats
+    // Get counts efficiently using count queries (not fetching all data)
     Promise.all([
-      prisma.phrase.findMany({
-        where: { authorId: userId },
-        include: {
-          definitions: {
-            include: {
-              votes: true
-            }
-          }
-        }
-      }),
-      prisma.definition.findMany({
-        where: { authorId: userId },
-        include: {
-          votes: true
-        }
-      }),
-      prisma.example.findMany({
-        where: { authorId: userId },
-        include: {
-          votes: true
-        }
-      })
+      prisma.phrase.count({ where: { authorId: userId } }),
+      prisma.definition.count({ where: { authorId: userId } }),
+      prisma.example.count({ where: { authorId: userId } })
     ]),
+    // Get total vote scores using aggregation
+    prisma.$queryRaw<{ def_score: bigint; ex_score: bigint }[]>`
+      SELECT
+        COALESCE((
+          SELECT SUM(dv.value)
+          FROM "Definition" d
+          JOIN "DefinitionVote" dv ON d.id = dv."definitionId"
+          WHERE d."authorId" = ${userId}
+        ), 0) as def_score,
+        COALESCE((
+          SELECT SUM(ev.value)
+          FROM "Example" e
+          JOIN "ExampleVote" ev ON e.id = ev."exampleId"
+          WHERE e."authorId" = ${userId}
+        ), 0) as ex_score
+    `,
     // Get user achievements (with initialization)
     (async () => {
       await AchievementService.ensureUserInitialized(userId);
@@ -108,7 +106,7 @@ export default async function ProfilePage() {
     })()
   ]);
 
-  const [allPhrases, allDefinitions, allExamples] = totalCounts;
+  const [phraseCount, definitionCount, exampleCount] = counts;
 
   if (!userData) {
     redirect("/");
@@ -123,17 +121,12 @@ export default async function ProfilePage() {
     });
   }
 
-  // Calculate comprehensive stats using total data
-  const definitionVoteScore = allDefinitions.reduce((total, def) => 
-    total + def.votes.reduce((sum, vote) => sum + vote.value, 0), 0
-  );
-  
-  const exampleVoteScore = allExamples.reduce((total, ex) => 
-    total + ex.votes.reduce((sum, vote) => sum + vote.value, 0), 0
-  );
+  // Calculate stats from optimized queries
+  const definitionVoteScore = Number(voteStats[0]?.def_score ?? 0);
+  const exampleVoteScore = Number(voteStats[0]?.ex_score ?? 0);
 
   const totalUpvotes = definitionVoteScore + exampleVoteScore;
-  const totalContributions = allPhrases.length + allDefinitions.length + allExamples.length;
+  const totalContributions = phraseCount + definitionCount + exampleCount;
 
   // Calculate actual reputation
   const reputationData = await calculateUserReputation(userId);
@@ -240,21 +233,21 @@ export default async function ProfilePage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
         <Card className="border-4 shadow-elevation-medium">
           <CardContent className="pt-4 md:pt-6 text-center">
-            <div className="text-xl md:text-2xl font-bold text-primary">{allPhrases.length}</div>
+            <div className="text-xl md:text-2xl font-bold text-primary">{phraseCount}</div>
             <div className="text-xs md:text-sm text-muted-foreground">Phrases Submitted</div>
           </CardContent>
         </Card>
-        
+
         <Card className="border-4 shadow-elevation-medium">
           <CardContent className="pt-4 md:pt-6 text-center">
-            <div className="text-xl md:text-2xl font-bold text-primary">{allDefinitions.length}</div>
+            <div className="text-xl md:text-2xl font-bold text-primary">{definitionCount}</div>
             <div className="text-xs md:text-sm text-muted-foreground">Definitions Added</div>
           </CardContent>
         </Card>
-        
+
         <Card className="border-4 shadow-elevation-medium">
           <CardContent className="pt-4 md:pt-6 text-center">
-            <div className="text-xl md:text-2xl font-bold text-primary">{allExamples.length}</div>
+            <div className="text-xl md:text-2xl font-bold text-primary">{exampleCount}</div>
             <div className="text-xs md:text-sm text-muted-foreground">Examples Contributed</div>
           </CardContent>
         </Card>
@@ -276,14 +269,14 @@ export default async function ProfilePage() {
 
 
       {/* Infinite Sortable Contributions Section */}
-      <InfiniteSortableContributions 
+      <InfiniteSortableContributions
         initialPhrases={userData.phrases}
         initialDefinitions={userData.definitions}
         initialExamples={userData.examples}
         totalCounts={{
-          phrases: allPhrases.length,
-          definitions: allDefinitions.length,
-          examples: allExamples.length
+          phrases: phraseCount,
+          definitions: definitionCount,
+          examples: exampleCount
         }}
       />
     </main>

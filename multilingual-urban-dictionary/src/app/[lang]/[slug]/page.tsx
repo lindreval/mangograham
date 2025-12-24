@@ -8,6 +8,9 @@ import Link from "next/link";
 import FlagButton from "@/components/FlagButton";
 import AdminEditButton from "@/components/AdminEditButton";
 
+// ISR: Revalidate phrase pages every hour
+export const revalidate = 3600;
+
 export async function generateMetadata({
   params,
 }: {
@@ -158,6 +161,11 @@ export default async function PhrasePage({
           <p className="text-sm md:text-base text-muted-foreground mt-2">
             Language: {phrase.language.name}
           </p>
+          {phrase.region && (
+            <p className="text-xs md:text-sm text-muted-foreground mt-1">
+              📍 Used in: {phrase.region}
+            </p>
+          )}
           {phrase.pronunciation && (
             <p className="text-xs md:text-sm text-muted-foreground mt-1">
               Pronunciation: {phrase.pronunciation}

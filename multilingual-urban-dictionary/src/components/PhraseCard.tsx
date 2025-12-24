@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { Phrase, Language, Definition, DefinitionVote, Example, ExampleVote, Tag, PhraseTag } from "@prisma/client";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -12,8 +12,9 @@ export interface PhraseWithLang extends Phrase {
   tags?: (PhraseTag & { tag: Tag })[];
   definitions?: (Definition & {
     votes: DefinitionVote[];
+    voteScore?: number; // Pre-calculated vote score for performance
     author: { name: string | null; email: string | null; };
-    examples: (Example & { votes: ExampleVote[] })[];
+    examples: (Example & { votes: ExampleVote[]; voteScore?: number })[];
   })[];
 }
 
@@ -37,25 +38,31 @@ export default function PhraseCard({ phrase }: { phrase: PhraseWithLang }) {
     setShowNSFW(true);
   };
   
-  // Calculate vote scores and find top definition
-  const topDefinition = phrase.definitions && phrase.definitions.length > 0
-    ? phrase.definitions
-        .map(def => ({
-          ...def,
-          score: def.votes.reduce((sum, v) => sum + v.value, 0)
-        }))
-        .sort((a, b) => b.score - a.score)[0]
-    : null;
+  // Memoize vote score calculations - use pre-calculated score when available
+  const topDefinition = useMemo(() => {
+    if (!phrase.definitions || phrase.definitions.length === 0) return null;
 
-  // Find top example for the top definition
-  const topExample = topDefinition?.examples && topDefinition.examples.length > 0
-    ? topDefinition.examples
-        .map(ex => ({
-          ...ex,
-          score: ex.votes.reduce((sum, v) => sum + v.value, 0)
-        }))
-        .sort((a, b) => b.score - a.score)[0]
-    : null;
+    return phrase.definitions
+      .map(def => ({
+        ...def,
+        // Use pre-calculated voteScore if available, otherwise calculate from votes array
+        score: def.voteScore ?? def.votes.reduce((sum, v) => sum + v.value, 0)
+      }))
+      .sort((a, b) => b.score - a.score)[0];
+  }, [phrase.definitions]);
+
+  // Memoize top example calculation - use pre-calculated score when available
+  const topExample = useMemo(() => {
+    if (!topDefinition?.examples || topDefinition.examples.length === 0) return null;
+
+    return topDefinition.examples
+      .map(ex => ({
+        ...ex,
+        // Use pre-calculated voteScore if available, otherwise calculate from votes array
+        score: ex.voteScore ?? ex.votes.reduce((sum, v) => sum + v.value, 0)
+      }))
+      .sort((a, b) => b.score - a.score)[0];
+  }, [topDefinition]);
 
   const handleCardClick = (e: React.MouseEvent) => {
     if (isNSFW && !showNSFW && !session?.user) {

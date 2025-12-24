@@ -3,6 +3,24 @@ import { prisma } from './prisma';
 import { Achievement, UserAchievement, Prisma } from '@prisma/client';
 import { ALL_ACHIEVEMENTS } from './achievement-definitions';
 
+// In-memory cache for user initialization status (cleared on server restart)
+// This prevents repeated DB checks for the same user within a request lifecycle
+const userInitializedCache = new Map<string, boolean>();
+const USER_CACHE_TTL_MS = 60000; // 1 minute cache TTL
+const userCacheTimestamps = new Map<string, number>();
+
+// Trigger type to required stats mapping for optimized queries
+const TRIGGER_STATS_MAP: Record<string, (keyof UserStats)[]> = {
+  'DEFINITION_CREATED': ['definitionsCreated'],
+  'EXAMPLE_CREATED': ['examplesCreated'],
+  'PHRASE_CREATED': ['phrasesCreated'],
+  'VOTE_CAST': ['votesCast'],
+  'VOTE_RECEIVED': ['upvotesReceived', 'totalVotesReceived'],
+  'PROFILE_UPDATED': ['profileCompleted'],
+  'RETURN_VISIT': ['returnVisit', 'daysSinceMembership'],
+  'INITIALIZATION': [], // Check all stats for new users
+};
+
 // Type for UserAchievement with included Achievement
 export type UserAchievementWithAchievement = UserAchievement & {
   achievement: Achievement;
@@ -71,42 +89,59 @@ export class AchievementService {
 
   /**
    * Ensure user has achievement records initialized (safe for existing users)
+   * Uses in-memory caching to avoid repeated DB checks
    */
-  static async ensureUserInitialized(userId: string): Promise<void> {
+  static async ensureUserInitialized(userId: string): Promise<boolean> {
     try {
+      // Check cache first
+      const cacheTime = userCacheTimestamps.get(userId);
+      const now = Date.now();
+      if (cacheTime && (now - cacheTime) < USER_CACHE_TTL_MS) {
+        const cached = userInitializedCache.get(userId);
+        if (cached === true) {
+          return false; // Already initialized, no need to check achievements
+        }
+      }
+
       const existingCount = await prisma.userAchievement.count({
         where: { userId }
       });
-      
+
       if (existingCount === 0) {
         await this.initializeUserAchievements(userId);
-        
-        // For existing users, immediately check all achievements they might have earned
-        setTimeout(async () => {
-          try {
-            await this.checkAndAwardAchievements(userId, 'INITIALIZATION');
-          } catch (error) {
-            console.error('Error during user initialization achievement check:', error);
-          }
-        }, 1000); // Delay to avoid blocking the current operation
+        // Update cache
+        userInitializedCache.set(userId, true);
+        userCacheTimestamps.set(userId, now);
+        return true; // User was just initialized - caller may want to do a full check
       }
+
+      // User already has achievements, cache this
+      userInitializedCache.set(userId, true);
+      userCacheTimestamps.set(userId, now);
+      return false;
     } catch (error) {
       console.error('Error ensuring user initialized:', error);
+      return false;
     }
   }
 
   /**
    * Check and award achievements for a user based on trigger type
    * Returns the newly awarded achievements for potential notification display
+   * Optimized to only query relevant stats based on trigger type
    */
   static async checkAndAwardAchievements(userId: string, triggerType: string): Promise<Achievement[]> {
     try {
       // Ensure user is initialized before checking achievements
-      if (triggerType !== 'INITIALIZATION') {
-        await this.ensureUserInitialized(userId);
-      }
-      
-      const userStats = await this.getUserStats(userId);
+      const wasJustInitialized = triggerType !== 'INITIALIZATION'
+        ? await this.ensureUserInitialized(userId)
+        : false;
+
+      // If user was just initialized, do a full check
+      const effectiveTrigger = wasJustInitialized ? 'INITIALIZATION' : triggerType;
+
+      // Get optimized stats based on trigger type
+      const userStats = await this.getUserStats(userId, effectiveTrigger);
       const newAchievements: Achievement[] = [];
 
       // Get all incomplete achievements for this user
@@ -241,20 +276,75 @@ export class AchievementService {
 
   /**
    * Get user statistics for achievement evaluation
+   * Optimized to only query data relevant to the trigger type
    */
-  private static async getUserStats(userId: string): Promise<UserStats> {
+  private static async getUserStats(userId: string, triggerType: string = 'INITIALIZATION'): Promise<UserStats> {
     try {
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-          definitions: true,
-          examples: true,
-          phrases: true,
-          definitionVotes: true,
-          exampleVotes: true
-        }
+      const neededStats = TRIGGER_STATS_MAP[triggerType] || [];
+      const isFullCheck = triggerType === 'INITIALIZATION' || neededStats.length === 0;
+
+      // Build optimized query set based on what's needed
+      const queries: Promise<unknown>[] = [];
+      const queryKeys: string[] = [];
+
+      // Always need basic user info for membership/profile checks
+      queries.push(
+        prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            reputation: true,
+            createdAt: true,
+            bio: true,
+            languagesSpoken: true
+          }
+        })
+      );
+      queryKeys.push('user');
+
+      // Only add queries for stats we actually need
+      if (isFullCheck || neededStats.includes('definitionsCreated')) {
+        queries.push(prisma.definition.count({ where: { authorId: userId } }));
+        queryKeys.push('definitions');
+      }
+
+      if (isFullCheck || neededStats.includes('examplesCreated')) {
+        queries.push(prisma.example.count({ where: { authorId: userId } }));
+        queryKeys.push('examples');
+      }
+
+      if (isFullCheck || neededStats.includes('phrasesCreated')) {
+        queries.push(prisma.phrase.count({ where: { authorId: userId } }));
+        queryKeys.push('phrases');
+      }
+
+      if (isFullCheck || neededStats.includes('votesCast')) {
+        queries.push(prisma.definitionVote.count({ where: { userId } }));
+        queries.push(prisma.exampleVote.count({ where: { userId } }));
+        queryKeys.push('defVotes', 'exVotes');
+      }
+
+      if (isFullCheck || neededStats.includes('upvotesReceived') || neededStats.includes('totalVotesReceived')) {
+        queries.push(
+          prisma.definitionVote.count({
+            where: {
+              definition: { authorId: userId },
+              value: 1
+            }
+          })
+        );
+        queryKeys.push('upvotes');
+      }
+
+      // Run only the queries we need in parallel
+      const results = await Promise.all(queries);
+
+      // Build result map
+      const resultMap: Record<string, unknown> = {};
+      queryKeys.forEach((key, i) => {
+        resultMap[key] = results[i];
       });
 
+      const user = resultMap['user'] as { reputation: number; createdAt: Date; bio: string | null; languagesSpoken: string[] } | null;
       if (!user) {
         throw new Error('User not found');
       }
@@ -264,35 +354,28 @@ export class AchievementService {
         (Date.now() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24)
       );
 
-      // Calculate upvotes received (simplified - would need more complex query in real implementation)
-      const upvotesReceived = await prisma.definitionVote.count({
-        where: {
-          definition: {
-            authorId: userId
-          },
-          value: 1
-        }
-      });
-
       // Profile completion check
       const profileCompleted = !!(user.bio && user.languagesSpoken.length > 0);
 
-      // Return visit check - user must have been a member for at least 1 day and not have the achievement yet
+      // Return visit check - user must have been a member for at least 1 day
       const returnVisit = daysSinceMembership > 0;
+
+      const defVotes = (resultMap['defVotes'] as number) || 0;
+      const exVotes = (resultMap['exVotes'] as number) || 0;
 
       return {
         reputation: user.reputation,
         daysSinceMembership,
-        definitionsCreated: user.definitions.length,
-        examplesCreated: user.examples.length,
-        phrasesCreated: user.phrases.length,
-        votesCast: user.definitionVotes.length + user.exampleVotes.length,
-        totalVotesReceived: upvotesReceived, // Simplified
-        upvotesReceived,
-        phrasesViewed: 0, // TODO: Implement phrase view tracking
-        languagesExplored: 0, // TODO: Implement language exploration tracking
-        languagePagesVisited: 0, // TODO: Implement page visit tracking
-        searchesPerformed: 0, // TODO: Implement search tracking
+        definitionsCreated: (resultMap['definitions'] as number) || 0,
+        examplesCreated: (resultMap['examples'] as number) || 0,
+        phrasesCreated: (resultMap['phrases'] as number) || 0,
+        votesCast: defVotes + exVotes,
+        totalVotesReceived: (resultMap['upvotes'] as number) || 0,
+        upvotesReceived: (resultMap['upvotes'] as number) || 0,
+        phrasesViewed: 0,
+        languagesExplored: 0,
+        languagePagesVisited: 0,
+        searchesPerformed: 0,
         profileCompleted,
         returnVisit
       };

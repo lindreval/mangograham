@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef, memo } from "react";
 import PhraseCard, { PhraseWithLang } from "./PhraseCard";
+
+// Memoized PhraseCard wrapper to prevent unnecessary re-renders
+const MemoizedPhraseCard = memo(PhraseCard);
 
 interface APIPhrase {
   id: number;
@@ -108,32 +111,43 @@ export default function InfiniteScrollPhrases({ initialPhrases }: InfiniteScroll
     }
   }, [page, loading, hasMore]);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.innerHeight + document.documentElement.scrollTop 
-          >= document.documentElement.offsetHeight - 1000) {
-        loadMorePhrases();
-      }
-    };
+  // Use IntersectionObserver instead of scroll events for better performance
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [loadMorePhrases]);
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loading && hasMore) {
+          loadMorePhrases();
+        }
+      },
+      { rootMargin: '1000px' }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [loadMorePhrases, loading, hasMore]);
 
   return (
     <section className="flex-1">
       {phrases.map((phrase) => (
         <div key={phrase.id} className="mb-6 transition-transform duration-300 hover:scale-102">
-          <PhraseCard phrase={phrase} />
+          <MemoizedPhraseCard phrase={phrase} />
         </div>
       ))}
-      
+
+      {/* Sentinel element for IntersectionObserver */}
+      <div ref={sentinelRef} className="h-1" />
+
       {loading && (
         <div className="flex justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
         </div>
       )}
-      
+
       {!hasMore && phrases.length > 0 && (
         <div className="text-center py-8 text-gray-500">
           You made it to the bottom!

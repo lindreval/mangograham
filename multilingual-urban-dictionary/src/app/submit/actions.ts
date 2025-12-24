@@ -36,6 +36,7 @@ export async function createSubmission(formData: FormData) {
     exampleTranslation: formData.get("exampleTranslation") as string | null,
     definitionId: formData.get("definitionId") as string | null,
     transliteration: formData.get("transliteration") as string | null,
+    region: formData.get("region") as string | null,
   };
 
   // Extract tag IDs from form data
@@ -70,9 +71,8 @@ export async function createSubmission(formData: FormData) {
       },
     });
 
-    // Check achievements for example creation
-    await AchievementService.checkAndAwardAchievements(userId, 'EXAMPLE_CREATED');
-    
+    // Note: Achievement check moved to after reputation update (line ~204) to avoid duplicate calls
+
     // Return the existing phrase for consistency
     result = await prisma.phrase.findFirst({
       where: { 
@@ -111,7 +111,29 @@ export async function createSubmission(formData: FormData) {
 
       let phrase;
       if (existingPhrase) {
-        phrase = existingPhrase;
+        // Check if a new region was submitted and update the phrase if needed
+        const newRegion = data.region?.trim();
+        if (newRegion) {
+          const existingRegions = existingPhrase.region
+            ? existingPhrase.region.split(',').map(r => r.trim().toLowerCase())
+            : [];
+
+          // Only add the region if it's not already in the list
+          if (!existingRegions.includes(newRegion.toLowerCase())) {
+            const updatedRegion = existingPhrase.region
+              ? `${existingPhrase.region}, ${newRegion}`
+              : newRegion;
+
+            phrase = await tx.phrase.update({
+              where: { id: existingPhrase.id },
+              data: { region: updatedRegion }
+            });
+          } else {
+            phrase = existingPhrase;
+          }
+        } else {
+          phrase = existingPhrase;
+        }
       } else {
         phrase = await tx.phrase.create({
           data: {
@@ -120,6 +142,7 @@ export async function createSubmission(formData: FormData) {
             slug: slugify(data.transliteration || phraseText),
             partOfSpeech: data.partOfSpeech,
             transliteration: data.transliteration && data.transliteration.trim() ? data.transliteration.trim() : null,
+            region: data.region && data.region.trim() ? data.region.trim() : null,
             languageId: parseInt(data.languageId),
             authorId: userId,
           },

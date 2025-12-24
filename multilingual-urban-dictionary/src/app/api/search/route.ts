@@ -57,7 +57,10 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ phrases, hasMore: phrases.length === limit });
+    const response = NextResponse.json({ phrases, hasMore: phrases.length === limit });
+    // Cache search results for 60 seconds, allow stale content for 120 seconds while revalidating
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
+    return response;
   } catch (error) {
     console.error("Error searching phrases:", error);
     return NextResponse.json({ error: "Failed to search phrases" }, { status: 500 });

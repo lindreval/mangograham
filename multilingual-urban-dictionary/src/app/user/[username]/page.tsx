@@ -22,11 +22,23 @@ interface UserProfilePageProps {
 export default async function UserProfilePage({ params }: UserProfilePageProps) {
   const { username } = await params;
   const session = await getServerSession(authConfig);
-  
-  // Get user data by username, total counts, and achievements
-  const [userData, totalCounts, userAchievements] = await Promise.all([
+
+  // First, get the user ID to use in all subsequent queries (avoids looking up by username multiple times)
+  const userLookup = await prisma.user.findUnique({
+    where: { username: username },
+    select: { id: true }
+  });
+
+  if (!userLookup) {
+    notFound();
+  }
+
+  const userId = userLookup.id;
+
+  // Get user data, counts, vote stats, and achievements in parallel
+  const [userData, counts, voteStats, userAchievements] = await Promise.all([
     prisma.user.findUnique({
-      where: { username: username },
+      where: { id: userId },
       include: {
         phrases: {
           include: {
@@ -71,61 +83,47 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
         }
       }
     }),
-    // Get user by username first to get the ID for counts
-    prisma.user.findUnique({ where: { username: username } }).then(async (user) => {
-      if (!user) return [[], [], []];
-      
-      return Promise.all([
-        prisma.phrase.findMany({
-          where: { authorId: user.id },
-          include: {
-            definitions: {
-              include: {
-                votes: true
-              }
-            }
-          }
-        }),
-        prisma.definition.findMany({
-          where: { authorId: user.id },
-          include: {
-            votes: true
-          }
-        }),
-        prisma.example.findMany({
-          where: { authorId: user.id },
-          include: {
-            votes: true
-          }
-        })
-      ]);
-    }),
+    // Get counts efficiently using count queries (not fetching all data)
+    Promise.all([
+      prisma.phrase.count({ where: { authorId: userId } }),
+      prisma.definition.count({ where: { authorId: userId } }),
+      prisma.example.count({ where: { authorId: userId } })
+    ]),
+    // Get total vote scores using aggregation
+    prisma.$queryRaw<{ def_score: bigint; ex_score: bigint }[]>`
+      SELECT
+        COALESCE((
+          SELECT SUM(dv.value)
+          FROM "Definition" d
+          JOIN "DefinitionVote" dv ON d.id = dv."definitionId"
+          WHERE d."authorId" = ${userId}
+        ), 0) as def_score,
+        COALESCE((
+          SELECT SUM(ev.value)
+          FROM "Example" e
+          JOIN "ExampleVote" ev ON e.id = ev."exampleId"
+          WHERE e."authorId" = ${userId}
+        ), 0) as ex_score
+    `,
     // Get user achievements (with initialization if needed)
-    prisma.user.findUnique({ where: { username: username } }).then(async (user) => {
-      if (!user) return [];
-      
-      await AchievementService.ensureUserInitialized(user.id);
-      return AchievementService.getUserAchievements(user.id);
-    })
+    (async () => {
+      await AchievementService.ensureUserInitialized(userId);
+      return AchievementService.getUserAchievements(userId);
+    })()
   ]);
 
-  const [allPhrases, allDefinitions, allExamples] = totalCounts;
+  const [phraseCount, definitionCount, exampleCount] = counts;
 
   if (!userData) {
     notFound();
   }
 
-  // Calculate comprehensive stats using total data
-  const definitionVoteScore = allDefinitions.reduce((total, def) => 
-    total + def.votes.reduce((sum, vote) => sum + vote.value, 0), 0
-  );
-  
-  const exampleVoteScore = allExamples.reduce((total, ex) => 
-    total + ex.votes.reduce((sum, vote) => sum + vote.value, 0), 0
-  );
+  // Calculate stats from optimized queries
+  const definitionVoteScore = Number(voteStats[0]?.def_score ?? 0);
+  const exampleVoteScore = Number(voteStats[0]?.ex_score ?? 0);
 
   const totalUpvotes = definitionVoteScore + exampleVoteScore;
-  const totalContributions = allPhrases.length + allDefinitions.length + allExamples.length;
+  const totalContributions = phraseCount + definitionCount + exampleCount;
 
   // Calculate actual reputation
   const reputationData = await calculateUserReputation(userData.id);
@@ -222,32 +220,32 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
         <Card className="border-4 shadow-elevation-medium">
           <CardContent className="pt-4 md:pt-6 text-center">
-            <div className="text-xl md:text-2xl font-bold text-primary">{allPhrases.length}</div>
+            <div className="text-xl md:text-2xl font-bold text-primary">{phraseCount}</div>
             <div className="text-xs md:text-sm text-muted-foreground">Phrases Submitted</div>
           </CardContent>
         </Card>
-        
+
         <Card className="border-4 shadow-elevation-medium">
           <CardContent className="pt-4 md:pt-6 text-center">
-            <div className="text-xl md:text-2xl font-bold text-primary">{allDefinitions.length}</div>
+            <div className="text-xl md:text-2xl font-bold text-primary">{definitionCount}</div>
             <div className="text-xs md:text-sm text-muted-foreground">Definitions Added</div>
           </CardContent>
         </Card>
-        
+
         <Card className="border-4 shadow-elevation-medium">
           <CardContent className="pt-4 md:pt-6 text-center">
-            <div className="text-xl md:text-2xl font-bold text-primary">{allExamples.length}</div>
+            <div className="text-xl md:text-2xl font-bold text-primary">{exampleCount}</div>
             <div className="text-xs md:text-sm text-muted-foreground">Examples Contributed</div>
           </CardContent>
         </Card>
-        
+
         <Card className="border-4 shadow-elevation-medium">
           <CardContent className="pt-4 md:pt-6 text-center">
             <div className="text-xl md:text-2xl font-bold text-green-600">{totalUpvotes}</div>
             <div className="text-xs md:text-sm text-muted-foreground">Total Upvotes</div>
           </CardContent>
         </Card>
-        
+
         <Card className="border-4 shadow-elevation-medium">
           <CardContent className="pt-4 md:pt-6 text-center">
             <div className="text-xl md:text-2xl font-bold text-purple-600">{totalContributions}</div>
@@ -257,15 +255,15 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
       </div>
 
       {/* Infinite Sortable Contributions Section */}
-      <InfiniteSortableContributions 
+      <InfiniteSortableContributions
         initialPhrases={userData.phrases}
         initialDefinitions={userData.definitions}
         initialExamples={userData.examples}
         userId={userData.id}
         totalCounts={{
-          phrases: allPhrases.length,
-          definitions: allDefinitions.length,
-          examples: allExamples.length
+          phrases: phraseCount,
+          definitions: definitionCount,
+          examples: exampleCount
         }}
       />
     </main>

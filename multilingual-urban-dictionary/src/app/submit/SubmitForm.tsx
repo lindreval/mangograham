@@ -211,7 +211,21 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
           />
         </label>
       )}
-      
+
+      {!isExistingPhrase && (
+        <label className="block">
+          <span className="block font-medium">Where is it used? (Optional)</span>
+          <input
+            name="region"
+            className="w-full rounded border p-2"
+            placeholder="e.g. Mexico City, California, Manila"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Specify the geographic region, city, or country where this phrase is commonly used
+          </p>
+        </label>
+      )}
+
       {!isExistingPhrase && (
         <div className="block">
           <span className="block font-medium mb-2">Tags</span>

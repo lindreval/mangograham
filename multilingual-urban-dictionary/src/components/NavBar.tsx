@@ -22,6 +22,7 @@ export default function NavBar() {
             alt="Yung Salita"
             width={32}
             height={32}
+            priority
             className="rounded w-6 h-6 md:w-8 md:h-8"
           />
           <span className="hidden sm:block">Yung Salita</span>

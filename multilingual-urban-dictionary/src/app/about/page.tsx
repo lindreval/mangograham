@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 
+// Static page - never needs revalidation
+export const revalidate = false;
+
 export const metadata: Metadata = {
   title: "About",
   description: "Learn about Yung Salita and our mission to preserve and share slang across languages",

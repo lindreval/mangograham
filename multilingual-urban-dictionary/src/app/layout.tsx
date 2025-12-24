@@ -51,16 +51,16 @@
 // }
 
 // src/app/layout.tsx
-// src/app/layout.tsx
 import type { Metadata } from "next";
-import { GeistSans, GeistMono } from "geist/font";  // ← import the font instances
+import { GeistSans, GeistMono } from "geist/font";
 import "./globals.css";
 import Providers from "./providers";
 import NavBar from "@/components/NavBar";
 import { Toaster } from "@/components/ui/toaster";
-import { AchievementChecker } from "@/components/achievements/AchievementChecker";
 import { Suspense } from "react";
-import { Analytics  } from "@vercel/analytics/next";
+import { Analytics } from "@vercel/analytics/next";
+// Achievement system temporarily disabled for performance investigation
+// import { DeferredAchievementLoader } from "@/components/achievements/DeferredAchievementLoader";
 
 export const metadata: Metadata = {
   title: {
@@ -127,7 +127,12 @@ export default function RootLayout({
       lang="en"
       className={`${GeistSans.variable} ${GeistMono.variable}`}
     >
-      {/* ② Apply the GeistSans variable via Tailwind’s font-sans utility */}
+      <head>
+        {/* Preconnect to Google's image CDN for faster avatar loading */}
+        <link rel="preconnect" href="https://lh3.googleusercontent.com" />
+        <link rel="dns-prefetch" href="https://lh3.googleusercontent.com" />
+      </head>
+      {/* ② Apply the GeistSans variable via Tailwind's font-sans utility */}
       <body className="min-h-screen font-sans antialiased">
         <Analytics />
         <Providers>
@@ -136,7 +141,7 @@ export default function RootLayout({
             <NavBar />
           </Suspense>
           {children}
-          <AchievementChecker />
+          {/* <DeferredAchievementLoader /> */}
           <Toaster />
         </Providers>
       </body>

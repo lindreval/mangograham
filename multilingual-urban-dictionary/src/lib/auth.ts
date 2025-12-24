@@ -99,13 +99,20 @@ declare module "next-auth" {
       image?: string | null;
     };
   }
-  
+
   interface User {
     id: string;
     role: string;
     name?: string | null;
     email?: string | null;
     image?: string | null;
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string;
+    role: string;
   }
 }
 
@@ -117,14 +124,22 @@ export const authConfig: NextAuthOptions = {
       clientSecret: process.env.CLIENT_SECRET!,
     }),
   ],
-  // Remove JWT strategy to use database sessions
-  // session: { strategy: "jwt" },
+  // Use JWT strategy for faster session checks (no DB query on every request)
+  session: { strategy: "jwt" },
   callbacks: {
-    async session({ session, user }) {
-      if (session.user && user) {
-        // user comes from database when using database sessions
-        session.user.id = user.id;
-        session.user.role = (user as { role?: string }).role || "user";
+    async jwt({ token, user }) {
+      // On initial sign in, user object is available
+      if (user) {
+        token.id = user.id;
+        token.role = (user as { role?: string }).role || "user";
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user && token) {
+        // token comes from JWT when using JWT sessions
+        session.user.id = token.id as string;
+        session.user.role = (token.role as string) || "user";
       }
       return session;
     },

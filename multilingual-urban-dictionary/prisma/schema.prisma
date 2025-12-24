@@ -23,6 +23,7 @@ model Phrase {
   partOfSpeech   String?
   pronunciation  String?
   transliteration String?
+  region         String?
   languageId     Int
   authorId       String?
   status         String       @default("pending")
@@ -35,6 +36,10 @@ model Phrase {
 
   @@unique([languageId, normalized], name: "normalized_languageId")
   @@index([textOriginal, languageId])
+  @@index([languageId])
+  @@index([authorId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model Definition {
@@ -50,6 +55,11 @@ model Definition {
   phrase    Phrase           @relation(fields: [phraseId], references: [id])
   votes     DefinitionVote[]
   examples  Example[]
+
+  @@index([authorId])
+  @@index([phraseId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model Example {
@@ -64,6 +74,10 @@ model Example {
   author       User          @relation("UserExamples", fields: [authorId], references: [id])
   definition   Definition    @relation(fields: [definitionId], references: [id], onDelete: Cascade)
   votes        ExampleVote[]
+
+  @@index([definitionId])
+  @@index([authorId])
+  @@index([status])
 }
 
 model DefinitionVote {
@@ -75,6 +89,8 @@ model DefinitionVote {
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, definitionId])
+  @@index([definitionId])
+  @@index([userId])
 }
 
 model ExampleVote {
@@ -86,6 +102,8 @@ model ExampleVote {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, exampleId])
+  @@index([exampleId])
+  @@index([userId])
 }
 
 model User {
@@ -216,12 +234,15 @@ model UserAchievement {
   maxProgress   Int      @default(1)    // Required progress to unlock
   isCompleted   Boolean  @default(false)
   notified      Boolean  @default(false) // Has user been notified of unlock
-  
+
   // Relations
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
-  
+
   @@unique([userId, achievementId])
+  @@index([userId, isCompleted])
+  @@index([userId, notified])
+  @@index([userId, unlockedAt])
 }
 
 enum AchievementCategory {

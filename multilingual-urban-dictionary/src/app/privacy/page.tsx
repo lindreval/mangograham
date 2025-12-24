@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 
+// Static page - never needs revalidation
+export const revalidate = false;
+
 export const metadata: Metadata = {
   title: "Privacy Policy - Yung Salita",
   description: "Privacy Policy for yungsalita.com - How we handle your data.",
