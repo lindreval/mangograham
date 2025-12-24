@@ -53,9 +53,10 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
 import { GeistSans, GeistMono } from "geist/font";
+import { maragsaDisplay } from "@/lib/fonts";
 import "./globals.css";
 import Providers from "./providers";
-import NavBar from "@/components/NavBar";
+import { ConditionalNavBar } from "@/components/ConditionalNavBar";
 import { Toaster } from "@/components/ui/toaster";
 import { Suspense } from "react";
 import { Analytics } from "@vercel/analytics/next";
@@ -124,7 +125,7 @@ export default function RootLayout({
     // ① Attach the CSS variables for Geist fonts to <html>
     <html
       lang="en"
-      className={`${GeistSans.variable} ${GeistMono.variable}`}
+      className={`${GeistSans.variable} ${GeistMono.variable} ${maragsaDisplay.variable}`}
     >
       <head>
         {/* Preconnect to Google's image CDN for faster avatar loading */}
@@ -137,7 +138,7 @@ export default function RootLayout({
         <Providers>
           {/* ③ Wrap your client-only NavBar in Suspense */}
           <Suspense fallback={null}>
-            <NavBar />
+            <ConditionalNavBar />
           </Suspense>
           {children}
           <DeferredAchievementLoader />
