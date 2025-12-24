@@ -45,6 +45,20 @@
 
 :root {
   --radius: 0.625rem;
+  --radius-card: 1.25rem;
+
+  /* Soft Shadow System */
+  --shadow-card:
+    0 1px 3px rgba(0, 0, 0, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-card-hover:
+    0 4px 12px rgba(0, 0, 0, 0.1),
+    0 12px 32px rgba(0, 0, 0, 0.08);
+
+  /* Motion */
+  --ease-smooth: cubic-bezier(0.34, 0, 0.12, 1);
+  --duration-hover: 250ms;
+
   --card: oklch(1 0 0);
   --card-foreground: oklch(0 0 0);
   --popover: oklch(1 0 0);
@@ -98,6 +112,14 @@
 }
 
 .dark {
+  /* Dark mode shadows */
+  --shadow-card:
+    0 1px 3px rgba(0, 0, 0, 0.2),
+    0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-card-hover:
+    0 4px 12px rgba(0, 0, 0, 0.25),
+    0 12px 32px rgba(0, 0, 0, 0.2);
+
   --background: oklch(0.97 0.015 140);
   --foreground: oklch(0.984 0.003 247.858);
   --card: oklch(0.208 0.042 265.755);
@@ -154,12 +176,20 @@
   .shadow-elevation-low {
     box-shadow: var(--shadow-elevation-low);
   }
-  
+
   .shadow-elevation-medium {
     box-shadow: var(--shadow-elevation-medium);
   }
-  
+
   .shadow-elevation-high {
     box-shadow: var(--shadow-elevation-high);
+  }
+
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  .shadow-card-hover {
+    box-shadow: var(--shadow-card-hover);
   }
 }

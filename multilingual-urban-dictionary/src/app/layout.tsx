@@ -59,8 +59,7 @@ import NavBar from "@/components/NavBar";
 import { Toaster } from "@/components/ui/toaster";
 import { Suspense } from "react";
 import { Analytics } from "@vercel/analytics/next";
-// Achievement system temporarily disabled for performance investigation
-// import { DeferredAchievementLoader } from "@/components/achievements/DeferredAchievementLoader";
+import { DeferredAchievementLoader } from "@/components/achievements/DeferredAchievementLoader";
 
 export const metadata: Metadata = {
   title: {
@@ -141,7 +140,7 @@ export default function RootLayout({
             <NavBar />
           </Suspense>
           {children}
-          {/* <DeferredAchievementLoader /> */}
+          <DeferredAchievementLoader />
           <Toaster />
         </Providers>
       </body>
