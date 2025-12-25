@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import PhraseCard, { PhraseWithLang } from "./PhraseCard";
+import StaggeredList from "./ui/staggered-list";
 import type { Language } from "@prisma/client";
 
 interface APILanguage extends Language {
@@ -185,12 +186,17 @@ export default function InfiniteScrollLanguages({
   if (mode === 'languages') {
     return (
       <div className="space-y-4">
-        <ul className="grid grid-cols-2 gap-4 md:grid-cols-3">
+        <StaggeredList
+          className="grid grid-cols-2 gap-4 md:grid-cols-3"
+          staggerDelay={40}
+          animationDuration={350}
+          as="ul"
+        >
           {languages.map((l) => (
             <Link key={l.id} href={`/${l.isoCode}`}>
               <li
                 id={l.isoCode}
-                className="rounded-lg border-2 p-3 bg-background shadow-sm transition-transform duration-300 hover:scale-102 hover:bg-accent shadow-elevation-medium hover:shadow-elevation-high cursor-pointer"
+                className="rounded-lg border-2 p-3 bg-background shadow-sm transition-all duration-300 hover:scale-[1.02] hover:bg-accent shadow-elevation-medium hover:shadow-elevation-high cursor-pointer"
               >
                 <div className="font-medium">
                   {l.name}
@@ -201,39 +207,35 @@ export default function InfiniteScrollLanguages({
               </li>
             </Link>
           ))}
-        </ul>
-        
+        </StaggeredList>
+
         {loading && (
           <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
         )}
-        
-        {/* {!hasMore && languages.length > 0 && (
-          <div className="text-center py-8 text-gray-500">
-            You&apos;ve seen all languages!
-          </div>
-        )} */}
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-4">
+      <StaggeredList className="grid gap-4" staggerDelay={60} animationDuration={400}>
         {phrases.map((phrase) => (
-          <PhraseCard key={phrase.id} phrase={phrase} />
+          <div key={phrase.id} className="transition-transform duration-300 hover:scale-[1.01]">
+            <PhraseCard phrase={phrase} />
+          </div>
         ))}
-      </div>
-      
+      </StaggeredList>
+
       {loading && (
         <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       )}
-      
+
       {!hasMore && phrases.length > 0 && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-muted-foreground">
           You&apos;ve seen all phrases for this language!
         </div>
       )}

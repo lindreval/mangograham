@@ -15,57 +15,45 @@ export interface ReputationBreakdown {
 }
 
 export async function calculateUserReputation(userId: string): Promise<ReputationBreakdown> {
-  // Get all user's definitions with their votes
-  const definitions = await prisma.definition.findMany({
-    where: { authorId: userId },
-    include: {
-      votes: true,
-      phrase: true,
-    },
-  });
+  // Use optimized aggregation queries instead of loading all data
+  const [definitionVotes, exampleVotes, approvedPhrasesCount] = await Promise.all([
+    // Get definition vote counts using aggregation
+    prisma.$queryRaw<{ upvotes: bigint; downvotes: bigint }[]>`
+      SELECT
+        COALESCE(SUM(CASE WHEN dv.value > 0 THEN 1 ELSE 0 END), 0) as upvotes,
+        COALESCE(SUM(CASE WHEN dv.value < 0 THEN 1 ELSE 0 END), 0) as downvotes
+      FROM "Definition" d
+      LEFT JOIN "DefinitionVote" dv ON d.id = dv."definitionId"
+      WHERE d."authorId" = ${userId}
+    `,
+    // Get example vote counts using aggregation
+    prisma.$queryRaw<{ upvotes: bigint; downvotes: bigint }[]>`
+      SELECT
+        COALESCE(SUM(CASE WHEN ev.value > 0 THEN 1 ELSE 0 END), 0) as upvotes,
+        COALESCE(SUM(CASE WHEN ev.value < 0 THEN 1 ELSE 0 END), 0) as downvotes
+      FROM "Example" e
+      LEFT JOIN "ExampleVote" ev ON e.id = ev."exampleId"
+      WHERE e."authorId" = ${userId}
+    `,
+    // Count approved phrases
+    prisma.phrase.count({
+      where: {
+        authorId: userId,
+        status: "approved"
+      },
+    })
+  ]);
 
-  // Get all user's examples with their votes
-  const examples = await prisma.example.findMany({
-    where: { authorId: userId },
-    include: {
-      votes: true,
-    },
-  });
-
-  // Get all user's approved phrases
-  const approvedPhrases = await prisma.phrase.findMany({
-    where: { 
-      authorId: userId,
-      status: "approved"
-    },
-  });
-
-  // Calculate definition votes
-  let definitionUpvotes = 0;
-  let definitionDownvotes = 0;
-  
-  definitions.forEach(def => {
-    def.votes.forEach(vote => {
-      if (vote.value > 0) definitionUpvotes++;
-      if (vote.value < 0) definitionDownvotes++;
-    });
-  });
-
-  // Calculate example votes
-  let exampleUpvotes = 0;
-  let exampleDownvotes = 0;
-  
-  examples.forEach(ex => {
-    ex.votes.forEach(vote => {
-      if (vote.value > 0) exampleUpvotes++;
-      if (vote.value < 0) exampleDownvotes++;
-    });
-  });
+  // Extract values from aggregation results
+  const definitionUpvotes = Number(definitionVotes[0]?.upvotes ?? 0);
+  const definitionDownvotes = Number(definitionVotes[0]?.downvotes ?? 0);
+  const exampleUpvotes = Number(exampleVotes[0]?.upvotes ?? 0);
+  const exampleDownvotes = Number(exampleVotes[0]?.downvotes ?? 0);
 
   // Calculate reputation breakdown
   const fromDefinitions = (definitionUpvotes * 2) - (definitionDownvotes * 1);
   const fromExamples = (exampleUpvotes * 1) - (exampleDownvotes * 0.5);
-  const fromPhrases = approvedPhrases.length * 1;
+  const fromPhrases = approvedPhrasesCount * 1;
 
   const totalReputation = Math.max(0, fromDefinitions + fromExamples + fromPhrases);
 
@@ -74,7 +62,7 @@ export async function calculateUserReputation(userId: string): Promise<Reputatio
     definitionDownvotes,
     exampleUpvotes,
     exampleDownvotes,
-    approvedPhrases: approvedPhrases.length,
+    approvedPhrases: approvedPhrasesCount,
     totalReputation: Math.round(totalReputation),
     breakdown: {
       fromDefinitions: Math.round(fromDefinitions),

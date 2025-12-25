@@ -2,17 +2,26 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authConfig } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { AchievementService } from "@/lib/achievements";
+import { profileUpdateSchema, validateRequestBody, sanitizeText } from "@/lib/validations";
+
+// TODO: Add rate limiting (Upstash Redis) - limit to 10 updates/day per user
 
 export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authConfig);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { name, username, bio, location, languagesSpoken } = body;
+    // Validate request body with Zod
+    const validation = await validateRequestBody(request, profileUpdateSchema);
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
+    const { name, username, bio, location, languagesSpoken } = validation.data;
 
     // Validate username uniqueness if it's being changed
     if (username) {
@@ -33,21 +42,25 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // Update user profile
+    // Update user profile with XSS sanitization
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
       data: {
-        name: name || null,
-        username: username || null,
-        bio: bio || null,
-        location: location || null,
+        name: name ? sanitizeText(name) : null,
+        username: username || null, // Username already validated by regex
+        bio: bio ? sanitizeText(bio) : null,
+        location: location ? sanitizeText(location) : null,
         languagesSpoken: languagesSpoken || [],
       },
     });
 
+    // Check for profile completion achievement
+    const achievements = await AchievementService.checkAndAwardAchievements(session.user.id, 'PROFILE_UPDATED');
+
     return NextResponse.json({ 
       message: "Profile updated successfully",
-      user: updatedUser 
+      user: updatedUser,
+      achievements 
     });
 
   } catch (error) {

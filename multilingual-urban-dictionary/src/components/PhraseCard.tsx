@@ -1,8 +1,16 @@
 "use client";
 
-import Link from "next/link";
-import type { Phrase, Language, Definition, DefinitionVote, Example, ExampleVote, Tag, PhraseTag } from "@prisma/client";
-import { useState } from "react";
+import type {
+  Phrase,
+  Language,
+  Definition,
+  DefinitionVote,
+  Example,
+  ExampleVote,
+  Tag,
+  PhraseTag,
+} from "@prisma/client";
+import { useState, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -12,8 +20,9 @@ export interface PhraseWithLang extends Phrase {
   tags?: (PhraseTag & { tag: Tag })[];
   definitions?: (Definition & {
     votes: DefinitionVote[];
-    author: { name: string | null; email: string | null; };
-    examples: (Example & { votes: ExampleVote[] })[];
+    voteScore?: number;
+    author: { name: string | null; email: string | null; username: string | null };
+    examples: (Example & { votes: ExampleVote[]; voteScore?: number })[];
   })[];
 }
 
@@ -21,128 +30,209 @@ export default function PhraseCard({ phrase }: { phrase: PhraseWithLang }) {
   const [showNSFW, setShowNSFW] = useState(false);
   const { data: session } = useSession();
   const router = useRouter();
-  
-  // Check if phrase has NSFW tag
-  const isNSFW = phrase.tags?.some(pt => pt.tag.name.toLowerCase() === 'nsfw') || false;
-  
+
+  const isNSFW =
+    phrase.tags?.some((pt) => pt.tag.name.toLowerCase() === "nsfw") || false;
+
   const handleShowNSFW = (e: React.MouseEvent) => {
     e.preventDefault();
-    
     if (!session?.user) {
-      // Redirect to sign in if not authenticated
-      router.push('/api/auth/signin');
+      router.push("/api/auth/signin");
       return;
     }
-    
     setShowNSFW(true);
   };
-  
-  // Calculate vote scores and find top definition
-  const topDefinition = phrase.definitions && phrase.definitions.length > 0
-    ? phrase.definitions
-        .map(def => ({
-          ...def,
-          score: def.votes.reduce((sum, v) => sum + v.value, 0)
-        }))
-        .sort((a, b) => b.score - a.score)[0]
-    : null;
 
-  // Find top example for the top definition
-  const topExample = topDefinition?.examples && topDefinition.examples.length > 0
-    ? topDefinition.examples
-        .map(ex => ({
-          ...ex,
-          score: ex.votes.reduce((sum, v) => sum + v.value, 0)
-        }))
-        .sort((a, b) => b.score - a.score)[0]
-    : null;
+  const topDefinition = useMemo(() => {
+    if (!phrase.definitions || phrase.definitions.length === 0) return null;
+    return phrase.definitions
+      .map((def) => ({
+        ...def,
+        score: def.voteScore ?? def.votes.reduce((sum, v) => sum + v.value, 0),
+      }))
+      .sort((a, b) => b.score - a.score)[0];
+  }, [phrase.definitions]);
+
+  const topExample = useMemo(() => {
+    if (!topDefinition?.examples || topDefinition.examples.length === 0)
+      return null;
+    return topDefinition.examples
+      .map((ex) => ({
+        ...ex,
+        score: ex.voteScore ?? ex.votes.reduce((sum, v) => sum + v.value, 0),
+      }))
+      .sort((a, b) => b.score - a.score)[0];
+  }, [topDefinition]);
 
   const handleCardClick = (e: React.MouseEvent) => {
-    if (isNSFW && !showNSFW && !session?.user) {
-      e.preventDefault();
-      router.push('/api/auth/signin');
+    // Don't navigate if clicking on an interactive element (like author link)
+    if ((e.target as HTMLElement).closest('a')) {
+      return;
     }
+
+    if (isNSFW && !showNSFW && !session?.user) {
+      router.push("/api/auth/signin");
+      return;
+    }
+
+    router.push(`/${phrase.language.isoCode}/${phrase.slug}`);
   };
 
   return (
-    <Link href={`/${phrase.language.isoCode}/${phrase.slug}`} onClick={handleCardClick}>
-      <article className={`rounded-lg border-4 bg-card text-card-foreground p-4 shadow-elevation-medium hover:bg-accent hover:shadow-elevation-high transition-shadow cursor-pointer relative ${isNSFW && !showNSFW ? 'overflow-hidden' : ''}`}>
-        <header className="mb-3 flex items-center justify-between">
-          <span className="text-base text-muted-foreground">
+    <div onClick={handleCardClick}>
+      <article
+        className={`
+          rounded-[20px] border-4 border-primary bg-card text-card-foreground p-5
+          shadow-card hover:shadow-card-hover hover:-translate-y-1.5 hover:border-primary/80
+          transition-all duration-[var(--duration-hover)] ease-[var(--ease-smooth)]
+          cursor-pointer relative overflow-hidden
+          ${isNSFW && !showNSFW ? "" : ""}
+        `}
+      >
+        {/* Header with Language Badge */}
+        <header className="mb-4 flex items-center justify-between relative z-10">
+          <span className="inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-bold bg-primary text-primary-foreground tracking-[0.15em] uppercase shadow-sm">
             {phrase.language.name}
           </span>
           <time
             dateTime={phrase.createdAt.toISOString()}
-            className="text-s text-muted-foreground"
+            className="text-[11px] text-muted-foreground/60 font-mono tabular-nums"
+            suppressHydrationWarning
           >
             {phrase.createdAt.toLocaleDateString()}
           </time>
         </header>
 
-        <h2 className={`text-xl font-semibold hover:underline mb-2 text-foreground ${isNSFW && !showNSFW ? 'blur-sm select-none' : ''}`}>
+        {/* Hero Title */}
+        <h2
+          lang={phrase.language.isoCode}
+          className={`
+            text-3xl md:text-4xl font-black text-foreground mb-2
+            tracking-tighter leading-[1.1]
+            drop-shadow-[0_1px_1px_rgba(0,0,0,0.1)]
+            relative z-10
+            ${isNSFW && !showNSFW ? "blur-sm select-none" : ""}
+          `}
+        >
           {phrase.textOriginal}
           {phrase.transliteration && (
-            <span className="ml-2 text-base text-muted-foreground font-normal">
-              ({phrase.transliteration})
+            <span lang="und" className="block mt-1.5 text-base md:text-lg text-muted-foreground/70 font-medium italic tracking-wide">
+              /{phrase.transliteration}/
             </span>
           )}
         </h2>
 
         {topDefinition && (
-          <div className={`space-y-2 ${isNSFW && !showNSFW ? 'blur-sm select-none' : ''}`}>
-            <p className="text-base text-card-foreground/80 whitespace-pre-wrap">
-              {topDefinition.body.length > 100
-                ? `${topDefinition.body.substring(0, 100)}...`
+          <div
+            className={`space-y-3 relative z-10 ${
+              isNSFW && !showNSFW ? "blur-sm select-none" : ""
+            }`}
+          >
+            {/* Definition Text */}
+            <p className="text-[15px] md:text-base text-card-foreground/85 leading-[1.7] line-clamp-3 whitespace-pre-wrap">
+              {topDefinition.body.length > 140
+                ? `${topDefinition.body.substring(0, 140)}...`
                 : topDefinition.body}
             </p>
 
+            {/* Example Quote with Decorative Quotation Marks */}
             {topExample && (
-              <div className="border-l-2 border-card-foreground/20 pl-3 space-y-1 bg-card/50 rounded-r p-2">
-                <p className="text-base italic text-card-foreground/70 whitespace-pre-wrap">
-                  &ldquo;{topExample.text.length > 80
-                    ? `${topExample.text.substring(0, 80)}...`
-                    : topExample.text}&rdquo;
-                </p>
-                {topExample.translation && (
-                  <p className="text-s text-card-foreground/60 whitespace-pre-wrap">
-                    {topExample.translation.length > 80
-                      ? `${topExample.translation.substring(0, 80)}...`
-                      : topExample.translation}
+              <div className="relative mt-4 pl-6">
+                {/* Large decorative opening quote */}
+                <span
+                  className="absolute -left-1 -top-2 text-5xl text-primary/20 font-serif leading-none select-none"
+                  aria-hidden="true"
+                >
+                  &ldquo;
+                </span>
+
+                <div className="border-l-2 border-primary/30 pl-4 py-1">
+                  <p lang={phrase.language.isoCode} className="text-sm italic text-card-foreground/70 leading-relaxed whitespace-pre-wrap">
+                    {topExample.text.length > 90
+                      ? `${topExample.text.substring(0, 90)}...`
+                      : topExample.text}
                   </p>
-                )}
+                  {topExample.translation && (
+                    <p lang="en" className="text-xs text-card-foreground/50 mt-1.5 not-italic whitespace-pre-wrap">
+                      {topExample.translation.length > 80
+                        ? `${topExample.translation.substring(0, 80)}...`
+                        : topExample.translation}
+                    </p>
+                  )}
+                </div>
               </div>
             )}
 
-            <div className="flex items-center justify-between text-xs text-card-foreground/70">
-              <span>
-                By {topDefinition.author.name || topDefinition.author.email || 'Anonymous'}
+            {/* Footer with Author & Votes */}
+            <div className="mt-4 pt-3 relative flex items-center justify-between">
+              {/* Gradient separator line */}
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-foreground/10 to-transparent" />
+
+              <span className="text-xs text-muted-foreground/60">
+                <span className="text-muted-foreground/40 mr-1">by</span>
+                {topDefinition.author.username ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/user/${topDefinition.author.username}`);
+                    }}
+                    className="font-medium text-primary/80 hover:text-primary hover:underline transition-colors relative z-20"
+                  >
+                    {topDefinition.author.name ||
+                      topDefinition.author.email ||
+                      "Anonymous"}
+                  </button>
+                ) : (
+                  <span className="font-medium text-muted-foreground/80">
+                    {topDefinition.author.name ||
+                      topDefinition.author.email ||
+                      "Anonymous"}
+                  </span>
+                )}
               </span>
-              <span className="flex items-center gap-1">
-                <span className={topDefinition.score >= 0 ? "text-primary" : "text-destructive"}>
-                  {topDefinition.score > 0 ? '+' : ''}{topDefinition.score}
+
+              {/* Vote count badge with arrow indicator */}
+              <span
+                className={`
+                  inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold
+                  ${
+                    topDefinition.score >= 0
+                      ? "bg-primary/15 text-primary"
+                      : "bg-destructive/15 text-destructive"
+                  }
+                `}
+              >
+                <span className="text-[10px]">
+                  {topDefinition.score >= 0 ? "▲" : "▼"}
                 </span>
-                votes
+                {Math.abs(topDefinition.score)}
               </span>
             </div>
           </div>
         )}
-        
+
         {/* NSFW Overlay */}
         {isNSFW && !showNSFW && (
-          <div className="absolute inset-0 bg-background/30 flex items-center justify-center rounded-lg">
-            <div className="bg-card/90 border border-muted-foreground/20 rounded-lg p-4 text-center shadow-lg backdrop-blur-sm">
-              <p className="text-md font-medium text-foreground mb-1">🔞 Mature Content</p>
-              <p className="text-xs text-muted-foreground mb-3">You must be 18+ to view.</p>
+          <div className="absolute inset-0 bg-background/70 backdrop-blur-lg flex items-center justify-center rounded-[20px] z-20">
+            <div className="bg-card rounded-2xl p-6 text-center shadow-lg border-4 border-primary/50 max-w-[200px]">
+              <div className="text-3xl mb-2">🔞</div>
+              <p className="text-sm font-bold text-foreground mb-1">
+                Mature Content
+              </p>
+              <p className="text-[11px] text-muted-foreground mb-4 leading-relaxed">
+                You must be 18+ to view this content
+              </p>
               <button
                 onClick={handleShowNSFW}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 px-3 py-1.5 rounded text-sm transition-colors font-medium"
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2.5 rounded-full text-sm font-bold transition-all hover:scale-105"
               >
-                {session?.user ? 'Show' : 'Sign in to view'}
+                {session?.user ? "Reveal" : "Sign In"}
               </button>
             </div>
           </div>
         )}
       </article>
-    </Link>
+    </div>
   );
 }

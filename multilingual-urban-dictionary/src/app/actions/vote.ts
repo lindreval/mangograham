@@ -3,151 +3,133 @@
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/lib/auth";
 import { getServerSession } from "next-auth";
-import { revalidatePath } from "next/cache";
 import { updateUserReputation } from "@/lib/reputation";
+import { AchievementService } from "@/lib/achievements";
 
-export async function voteOnDefinition(definitionId: number, value: number) {
-  try {
-    const session = await getServerSession(authConfig);
-    
-    if (!session?.user?.id) {
-      return { error: "Please sign in to vote" };
-    }
+type VoteResult = { success: true } | { error: string };
 
-    // Ensure user exists in database
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-    });
-    
-    if (!user) {
-      return { error: "User account not found. Please sign out and sign back in." };
-    }
+/**
+ * Generic vote handler factory to eliminate duplication between definition and example voting.
+ * Creates a vote function for any voteable entity type.
+ */
+function createVoteHandler<TEntityId extends number>(config: {
+  entityName: string;
+  getExistingVote: (userId: string, entityId: TEntityId) => Promise<{ value: number } | null>;
+  deleteVote: (userId: string, entityId: TEntityId) => Promise<void>;
+  upsertVote: (userId: string, entityId: TEntityId, value: number) => Promise<void>;
+  getAuthorId: (entityId: TEntityId) => Promise<string | null>;
+}) {
+  return async function vote(entityId: TEntityId, value: number): Promise<VoteResult> {
+    try {
+      const session = await getServerSession(authConfig);
 
-    // Check if user already voted with the same value
-    const existingVote = await prisma.definitionVote.findUnique({
-      where: {
-        userId_definitionId: {
-          userId: session.user.id,
-          definitionId,
-        },
-      },
-    });
+      if (!session?.user?.id) {
+        return { error: "Please sign in to vote" };
+      }
 
-    // If same vote exists, remove it (undo vote)
-    if (existingVote && existingVote.value === value) {
-      await prisma.definitionVote.delete({
-        where: {
-          userId_definitionId: {
-            userId: session.user.id,
-            definitionId,
-          },
-        },
+      const userId = session.user.id;
+
+      // Parallel queries: check existing vote AND get entity author
+      const [existingVote, authorId] = await Promise.all([
+        config.getExistingVote(userId, entityId),
+        config.getAuthorId(entityId),
+      ]);
+
+      // Fast vote operation
+      if (existingVote && existingVote.value === value) {
+        // Undo vote (delete)
+        await config.deleteVote(userId, entityId);
+      } else {
+        // Create or update vote
+        await config.upsertVote(userId, entityId, value);
+      }
+
+      // Note: Removed aggressive revalidatePath('/') - optimistic updates handle UI
+      // and ISR (60s) handles other users. This reduces unnecessary server load.
+
+      // Start all background work immediately (truly non-blocking)
+      setImmediate(() => {
+        const backgroundWork = [];
+
+        if (authorId) {
+          backgroundWork.push(
+            updateUserReputation(authorId).catch((err) =>
+              console.warn("Failed to update author reputation:", err)
+            ),
+            AchievementService.checkAndAwardAchievements(authorId, "VOTE_RECEIVED").catch((err) =>
+              console.warn("Failed to check author achievements:", err)
+            )
+          );
+        }
+
+        backgroundWork.push(
+          AchievementService.checkAndAwardAchievements(userId, "VOTE_CAST").catch((err) =>
+            console.warn("Failed to check voter achievements:", err)
+          )
+        );
+
+        // Fire and forget
+        Promise.allSettled(backgroundWork);
       });
-    } else {
-      // Otherwise, create or update the vote
-      await prisma.definitionVote.upsert({
-        where: {
-          userId_definitionId: {
-            userId: session.user.id,
-            definitionId,
-          },
-        },
-        update: { value },
-        create: {
-          userId: session.user.id,
-          definitionId,
-          value,
-        },
-      });
-    }
 
-    // Update the author's reputation after voting
+      return { success: true };
+    } catch (error) {
+      console.error(`${config.entityName} vote error:`, error);
+      return { error: "Failed to record vote. Please try again." };
+    }
+  };
+}
+
+// Definition voting - uses the generic factory
+export const voteOnDefinition = createVoteHandler<number>({
+  entityName: "Definition",
+  getExistingVote: (userId, definitionId) =>
+    prisma.definitionVote.findUnique({
+      where: { userId_definitionId: { userId, definitionId } },
+      select: { value: true },
+    }),
+  deleteVote: (userId, definitionId) =>
+    prisma.definitionVote.delete({
+      where: { userId_definitionId: { userId, definitionId } },
+    }).then(() => {}),
+  upsertVote: (userId, definitionId, value) =>
+    prisma.definitionVote.upsert({
+      where: { userId_definitionId: { userId, definitionId } },
+      update: { value },
+      create: { userId, definitionId, value },
+    }).then(() => {}),
+  getAuthorId: async (definitionId) => {
     const definition = await prisma.definition.findUnique({
       where: { id: definitionId },
-      select: { authorId: true }
+      select: { authorId: true },
     });
+    return definition?.authorId ?? null;
+  },
+});
 
-    if (definition?.authorId) {
-      await updateUserReputation(definition.authorId);
-    }
-
-    revalidatePath(`/`);
-    return { success: true };
-  } catch (error) {
-    console.error("Vote error:", error);
-    return { error: "Failed to record vote. Please try again." };
-  }
-}
-
-export async function voteOnExample(exampleId: number, value: number) {
-  try {
-    const session = await getServerSession(authConfig);
-    
-    if (!session?.user?.id) {
-      return { error: "Please sign in to vote" };
-    }
-
-    // Ensure user exists in database
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-    });
-    
-    if (!user) {
-      return { error: "User account not found. Please sign out and sign back in." };
-    }
-
-    // Check if user already voted with the same value
-    const existingVote = await prisma.exampleVote.findUnique({
-      where: {
-        userId_exampleId: {
-          userId: session.user.id,
-          exampleId,
-        },
-      },
-    });
-
-    // If same vote exists, remove it (undo vote)
-    if (existingVote && existingVote.value === value) {
-      await prisma.exampleVote.delete({
-        where: {
-          userId_exampleId: {
-            userId: session.user.id,
-            exampleId,
-          },
-        },
-      });
-    } else {
-      // Otherwise, create or update the vote
-      await prisma.exampleVote.upsert({
-        where: {
-          userId_exampleId: {
-            userId: session.user.id,
-            exampleId,
-          },
-        },
-        update: { value },
-        create: {
-          userId: session.user.id,
-          exampleId,
-          value,
-        },
-      });
-    }
-
-    // Update the author's reputation after voting
+// Example voting - uses the generic factory
+export const voteOnExample = createVoteHandler<number>({
+  entityName: "Example",
+  getExistingVote: (userId, exampleId) =>
+    prisma.exampleVote.findUnique({
+      where: { userId_exampleId: { userId, exampleId } },
+      select: { value: true },
+    }),
+  deleteVote: (userId, exampleId) =>
+    prisma.exampleVote.delete({
+      where: { userId_exampleId: { userId, exampleId } },
+    }).then(() => {}),
+  upsertVote: (userId, exampleId, value) =>
+    prisma.exampleVote.upsert({
+      where: { userId_exampleId: { userId, exampleId } },
+      update: { value },
+      create: { userId, exampleId, value },
+    }).then(() => {}),
+  getAuthorId: async (exampleId) => {
     const example = await prisma.example.findUnique({
       where: { id: exampleId },
-      select: { authorId: true }
+      select: { authorId: true },
     });
-
-    if (example?.authorId) {
-      await updateUserReputation(example.authorId);
-    }
-
-    revalidatePath(`/`);
-    return { success: true };
-  } catch (error) {
-    console.error("Vote error:", error);
-    return { error: "Failed to record vote. Please try again." };
-  }
-}
+    return example?.authorId ?? null;
+  },
+});
