@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -104,7 +104,7 @@ export default function EditProfileModal({ user }: EditProfileModalProps) {
 
   const handleDeleteAccount = async () => {
     setIsDeleteLoading(true);
-    
+
     try {
       const response = await fetch("/api/profile", {
         method: "DELETE",
@@ -115,8 +115,8 @@ export default function EditProfileModal({ user }: EditProfileModalProps) {
         throw new Error(errorData.error || "Failed to delete account");
       }
 
-      // Sign out and redirect to home
-      window.location.href = "/";
+      // Properly sign out and redirect to home
+      await signOut({ callbackUrl: "/" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {

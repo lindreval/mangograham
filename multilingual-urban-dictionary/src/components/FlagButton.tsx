@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { Flag } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "@/hooks/use-toast";
 
 interface FlagButtonProps {
   definitionId?: number;
@@ -41,15 +42,28 @@ export default function FlagButton({ definitionId, exampleId, phraseId, onFlagge
       if (response.ok) {
         setIsFlagged(true);
         onFlagged?.();
+        toast({
+          title: "Content reported",
+          description: "Thank you for helping keep the community safe.",
+          variant: "success",
+        });
         // Refresh the page to show updated status
         router.refresh();
       } else {
         const error = await response.json();
-        alert(error.error || 'Failed to flag content');
+        toast({
+          title: "Report failed",
+          description: error.error || 'Failed to flag content',
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error flagging content:', error);
-      alert('An error occurred while flagging the content');
+      toast({
+        title: "Report failed",
+        description: "An error occurred while flagging the content",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

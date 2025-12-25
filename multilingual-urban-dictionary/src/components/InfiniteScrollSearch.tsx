@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import PhraseCard, { PhraseWithLang } from "./PhraseCard";
 import StaggeredList from "./ui/staggered-list";
 
@@ -110,17 +110,26 @@ export default function InfiniteScrollSearch({ initialPhrases, query }: Infinite
     }
   }, [query, page, loading, hasMore]);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.innerHeight + document.documentElement.scrollTop 
-          >= document.documentElement.offsetHeight - 1000) {
-        loadMorePhrases();
-      }
-    };
+  // Sentinel ref for IntersectionObserver
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [loadMorePhrases]);
+  // Use IntersectionObserver instead of scroll events for better performance
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loading && hasMore) {
+          loadMorePhrases();
+        }
+      },
+      { rootMargin: "1000px" } // Trigger 1000px before reaching bottom
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [loading, hasMore, loadMorePhrases]);
 
   // Reset when query changes
   useEffect(() => {
@@ -138,6 +147,9 @@ export default function InfiniteScrollSearch({ initialPhrases, query }: Infinite
           </div>
         ))}
       </StaggeredList>
+
+      {/* Sentinel element for IntersectionObserver */}
+      <div ref={sentinelRef} className="h-1" aria-hidden="true" />
 
       {loading && (
         <div className="flex justify-center py-8">

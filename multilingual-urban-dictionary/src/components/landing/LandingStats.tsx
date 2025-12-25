@@ -76,7 +76,7 @@ export function LandingStats({ stats }: Props) {
   return (
     <section className="relative px-4 mt-0">
       {/* Stats Grid */}
-      <div className="max-w-3xl mx-auto grid grid-cols-3 gap-3 md:gap-4">
+      <div className="max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
         {statCards.map((card, index) => (
           <div
             key={index}

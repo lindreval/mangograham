@@ -19,81 +19,62 @@ export default function StaggeredList({
   animationDuration = 400,
   as: Component = "div",
 }: StaggeredListProps) {
-  const [animatedCount, setAnimatedCount] = useState(0);
+  const [mounted, setMounted] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(0);
   const prevLengthRef = useRef(0);
 
-  // Track which items are new and should animate
+  // Trigger mount animation
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Animate items in sequence
+  useEffect(() => {
+    if (!mounted) return;
+
     const currentLength = children.length;
     const prevLength = prevLengthRef.current;
 
+    // New items added or initial load
     if (currentLength > prevLength) {
-      // New items added - animate them
-      setAnimatedCount(prevLength);
-      // After animation, mark all as animated
-      const timeout = setTimeout(() => {
-        setAnimatedCount(currentLength);
-      }, (currentLength - prevLength) * staggerDelay + animationDuration);
+      // Stagger the visibility of new items
+      let count = prevLength;
+      const interval = setInterval(() => {
+        count++;
+        setVisibleCount(count);
+        if (count >= currentLength) {
+          clearInterval(interval);
+        }
+      }, staggerDelay);
 
       prevLengthRef.current = currentLength;
-      return () => clearTimeout(timeout);
+      return () => clearInterval(interval);
     } else if (currentLength < prevLength) {
-      // Items removed - reset
-      setAnimatedCount(currentLength);
+      // Items removed
+      setVisibleCount(currentLength);
       prevLengthRef.current = currentLength;
     }
-  }, [children.length, staggerDelay, animationDuration]);
-
-  // On initial mount, animate all items
-  useEffect(() => {
-    if (prevLengthRef.current === 0 && children.length > 0) {
-      prevLengthRef.current = children.length;
-      const timeout = setTimeout(() => {
-        setAnimatedCount(children.length);
-      }, children.length * staggerDelay + animationDuration);
-      return () => clearTimeout(timeout);
-    }
-  }, [children.length, staggerDelay, animationDuration]);
+  }, [mounted, children.length, staggerDelay]);
 
   return (
-    <>
-      <Component className={className}>
-        {children.map((child, index) => {
-          const shouldAnimate = index >= animatedCount;
-          const delay = shouldAnimate ? (index - animatedCount) * staggerDelay : 0;
+    <Component className={className}>
+      {children.map((child, index) => {
+        const isVisible = mounted && index < visibleCount;
 
-          return (
-            <div
-              key={index}
-              className={`staggered-item ${itemClassName}`}
-              style={{
-                animationDelay: shouldAnimate ? `${delay}ms` : "0ms",
-                animationPlayState: shouldAnimate ? "running" : "paused",
-                opacity: shouldAnimate ? 0 : 1,
-              }}
-            >
-              {child}
-            </div>
-          );
-        })}
-      </Component>
-
-      <style jsx>{`
-        @keyframes stagger-fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(8px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .staggered-item {
-          animation: stagger-fade-in ${animationDuration}ms cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
-      `}</style>
-    </>
+        return (
+          <div
+            key={index}
+            className={itemClassName}
+            style={{
+              opacity: isVisible ? 1 : 0,
+              transform: isVisible ? "translateY(0)" : "translateY(8px)",
+              transition: `opacity ${animationDuration}ms cubic-bezier(0.16, 1, 0.3, 1), transform ${animationDuration}ms cubic-bezier(0.16, 1, 0.3, 1)`,
+            }}
+          >
+            {child}
+          </div>
+        );
+      })}
+    </Component>
   );
 }

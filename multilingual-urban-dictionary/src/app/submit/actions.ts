@@ -7,6 +7,7 @@ import slugify from "@/lib/slugify";
 import type { Session } from "next-auth";
 import { updateUserReputation } from "@/lib/reputation";
 import { AchievementService } from "@/lib/achievements";
+import { sanitizeText } from "@/lib/validations";
 
 interface CustomSession extends Session {
   user: {
@@ -61,11 +62,11 @@ export async function createSubmission(formData: FormData) {
       throw new Error("Definition ID is required");
     }
     
-    // Adding example to existing definition - simple operation
+    // Adding example to existing definition - simple operation with XSS sanitization
     await prisma.example.create({
       data: {
-        text: data.example.trim(),
-        translation: data.exampleTranslation && data.exampleTranslation.trim() ? data.exampleTranslation.trim() : null,
+        text: sanitizeText(data.example.trim()),
+        translation: data.exampleTranslation && data.exampleTranslation.trim() ? sanitizeText(data.exampleTranslation.trim()) : null,
         authorId: userId,
         definitionId: parseInt(data.definitionId),
       },
@@ -135,34 +136,36 @@ export async function createSubmission(formData: FormData) {
           phrase = existingPhrase;
         }
       } else {
+        // Create phrase with XSS sanitization
         phrase = await tx.phrase.create({
           data: {
-            textOriginal: phraseText,
+            textOriginal: sanitizeText(phraseText),
             normalized: phraseText.toLowerCase(),
             slug: slugify(data.transliteration || phraseText),
             partOfSpeech: data.partOfSpeech,
-            transliteration: data.transliteration && data.transliteration.trim() ? data.transliteration.trim() : null,
-            region: data.region && data.region.trim() ? data.region.trim() : null,
+            transliteration: data.transliteration && data.transliteration.trim() ? sanitizeText(data.transliteration.trim()) : null,
+            region: data.region && data.region.trim() ? sanitizeText(data.region.trim()) : null,
             languageId: parseInt(data.languageId),
             authorId: userId,
           },
         });
       }
 
+      // Create definition with XSS sanitization
       const definition = await tx.definition.create({
         data: {
           phraseId: phrase.id,
-          body: data.definition.trim(),
+          body: sanitizeText(data.definition.trim()),
           authorId: userId,
         },
       });
 
-      // Create example if provided
+      // Create example if provided with XSS sanitization
       if (data.example && data.example.trim()) {
         await tx.example.create({
           data: {
-            text: data.example.trim(),
-            translation: data.exampleTranslation && data.exampleTranslation.trim() ? data.exampleTranslation.trim() : null,
+            text: sanitizeText(data.example.trim()),
+            translation: data.exampleTranslation && data.exampleTranslation.trim() ? sanitizeText(data.exampleTranslation.trim()) : null,
             authorId: userId,
             definitionId: definition.id,
           },

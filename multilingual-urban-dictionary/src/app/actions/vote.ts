@@ -3,7 +3,6 @@
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/lib/auth";
 import { getServerSession } from "next-auth";
-import { revalidatePath } from "next/cache";
 import { updateUserReputation } from "@/lib/reputation";
 import { AchievementService } from "@/lib/achievements";
 
@@ -60,8 +59,8 @@ export async function voteOnDefinition(definitionId: number, value: number) {
       });
     }
 
-    // Revalidation must be synchronous in server actions
-    revalidatePath(`/`);
+    // Note: Removed aggressive revalidatePath('/') - optimistic updates handle UI
+    // and ISR (60s) handles other users. This reduces unnecessary server load.
 
     // Start all background work immediately (truly non-blocking)
     setImmediate(() => {
@@ -148,8 +147,8 @@ export async function voteOnExample(exampleId: number, value: number) {
       });
     }
 
-    // Revalidation must be synchronous in server actions
-    revalidatePath(`/`);
+    // Note: Removed aggressive revalidatePath('/') - optimistic updates handle UI
+    // and ISR (60s) handles other users. This reduces unnecessary server load.
 
     // Start all background work immediately (truly non-blocking)
     setImmediate(() => {

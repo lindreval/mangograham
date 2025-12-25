@@ -1,10 +1,11 @@
 // components/VoteButtons.tsx
 "use client";
 
-import { useTransition, useOptimistic } from "react";
+import { useTransition, useOptimistic, useRef } from "react";
 import { voteOnDefinition, voteOnExample } from "@/app/actions/vote";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { triggerAchievementPolling } from "@/hooks/useAchievementPolling";
+import { toast } from "@/hooks/use-toast";
 
 export default function VoteButtons({
   score,
@@ -43,15 +44,21 @@ export default function VoteButtons({
     }
   );
 
+  // Store previous state for rollback on error
+  const previousStateRef = useRef({ score, userVote });
+
   const handleVote = (value: number) => {
     // Determine the new vote state
     const newVote = optimisticVote.userVote === value ? null : value;
-    
+
+    // Store current state before optimistic update for potential rollback
+    previousStateRef.current = { score: optimisticVote.score, userVote: optimisticVote.userVote };
+
     // Perform optimistic update and server action within transition
     startTransition(async () => {
       // Immediately update UI optimistically
       setOptimisticVote(newVote);
-      
+
       try {
         let result;
         if (type === "definition") {
@@ -61,16 +68,26 @@ export default function VoteButtons({
         }
 
         if (result?.error) {
-          alert(result.error);
-          // TODO: Revert optimistic update on error
+          // Revert to previous state on error
+          setOptimisticVote(previousStateRef.current.userVote);
+          toast({
+            title: "Vote failed",
+            description: result.error,
+            variant: "destructive",
+          });
         } else {
           // Trigger smart achievement polling after successful vote
           triggerAchievementPolling();
         }
       } catch (error) {
         console.error("Vote error:", error);
-        alert("An unexpected error occurred. Please try again.");
-        // TODO: Revert optimistic update on error
+        // Revert to previous state on error
+        setOptimisticVote(previousStateRef.current.userVote);
+        toast({
+          title: "Vote failed",
+          description: "An unexpected error occurred. Please try again.",
+          variant: "destructive",
+        });
       }
     });
   };
@@ -80,6 +97,8 @@ export default function VoteButtons({
       <button
         disabled={isPending}
         onClick={() => handleVote(1)}
+        aria-label={optimisticVote.userVote === 1 ? `Remove upvote from ${type}` : `Upvote ${type}`}
+        aria-pressed={optimisticVote.userVote === 1}
         className={`
           disabled:opacity-50 p-1 rounded transition-all duration-200 hover:scale-110 active:scale-95
           ${optimisticVote.userVote === 1
@@ -89,12 +108,16 @@ export default function VoteButtons({
         `}
         title={optimisticVote.userVote === 1 ? "Remove upvote" : "Upvote"}
       >
-        <ChevronUp className="h-4 w-4" />
+        <ChevronUp className="h-4 w-4" aria-hidden="true" />
       </button>
-      <span className="text-sm font-medium min-w-[1.5rem] text-center">{optimisticVote.score}</span>
+      <span className="text-sm font-medium min-w-[1.5rem] text-center" aria-live="polite" aria-atomic="true">
+        {optimisticVote.score}
+      </span>
       <button
         disabled={isPending}
         onClick={() => handleVote(-1)}
+        aria-label={optimisticVote.userVote === -1 ? `Remove downvote from ${type}` : `Downvote ${type}`}
+        aria-pressed={optimisticVote.userVote === -1}
         className={`
           disabled:opacity-50 p-1 rounded transition-all duration-200 hover:scale-110 active:scale-95
           ${optimisticVote.userVote === -1
@@ -104,7 +127,7 @@ export default function VoteButtons({
         `}
         title={optimisticVote.userVote === -1 ? "Remove downvote" : "Downvote"}
       >
-        <ChevronDown className="h-4 w-4" />
+        <ChevronDown className="h-4 w-4" aria-hidden="true" />
       </button>
     </div>
   );
