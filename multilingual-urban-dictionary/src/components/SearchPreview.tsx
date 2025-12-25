@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -27,9 +27,11 @@ export default function SearchPreview({ defaultValue = "" }: SearchPreviewProps)
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
   const router = useRouter();
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   // Debounce search
   useEffect(() => {
@@ -81,6 +83,52 @@ export default function SearchPreview({ defaultValue = "" }: SearchPreviewProps)
     setQuery(result.textOriginal);
   };
 
+  // Reset selected index when results change
+  useEffect(() => {
+    setSelectedIndex(-1);
+  }, [results]);
+
+  // Handle keyboard navigation
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (!isOpen || results.length === 0) return;
+
+      const maxIndex = results.length + (results.length === 8 ? 0 : -1); // Include "View all" if 8 results
+
+      switch (e.key) {
+        case "ArrowDown":
+          e.preventDefault();
+          setSelectedIndex((prev) => (prev < maxIndex ? prev + 1 : 0));
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : maxIndex));
+          break;
+        case "Enter":
+          if (selectedIndex >= 0) {
+            e.preventDefault();
+            if (selectedIndex < results.length) {
+              const result = results[selectedIndex];
+              router.push(`/${result.language.isoCode}/${result.slug}`);
+              setIsOpen(false);
+              setQuery(result.textOriginal);
+            } else if (results.length === 8) {
+              // "View all results" option
+              router.push(`/search?q=${encodeURIComponent(query)}`);
+              setIsOpen(false);
+            }
+          }
+          break;
+        case "Escape":
+          e.preventDefault();
+          setIsOpen(false);
+          setSelectedIndex(-1);
+          break;
+      }
+    },
+    [isOpen, results, selectedIndex, router, query]
+  );
+
   return (
     <div ref={searchRef} className="relative flex-1 mx-2 md:mx-auto md:w-full md:max-w-xl">
       <form onSubmit={handleSubmit}>
@@ -93,8 +141,13 @@ export default function SearchPreview({ defaultValue = "" }: SearchPreviewProps)
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => results.length > 0 && setIsOpen(true)}
+            onKeyDown={handleKeyDown}
             className="w-full pr-10 h-8 md:h-10 text-sm md:text-base"
             autoComplete="off"
+            role="combobox"
+            aria-expanded={isOpen}
+            aria-controls="search-listbox"
+            aria-activedescendant={selectedIndex >= 0 ? `search-option-${selectedIndex}` : undefined}
           />
           <Button
             type="submit"
@@ -110,10 +163,16 @@ export default function SearchPreview({ defaultValue = "" }: SearchPreviewProps)
 
       {/* Search Preview Dropdown */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-1 rounded-xl border-2 border-primary/20 bg-card shadow-card-hover z-50 max-h-80 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
+        <div
+          ref={listRef}
+          id="search-listbox"
+          role="listbox"
+          aria-label="Search results"
+          className="absolute top-full left-0 right-0 mt-1 rounded-xl border-2 border-primary/20 bg-card shadow-card-hover z-50 max-h-80 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200"
+        >
           {loading ? (
-            <div className="flex items-center justify-center gap-2 p-4 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
+            <div className="flex items-center justify-center gap-2 p-4 text-sm text-muted-foreground" role="status">
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
               <span>Searching...</span>
             </div>
           ) : results.length > 0 ? (
@@ -121,9 +180,16 @@ export default function SearchPreview({ defaultValue = "" }: SearchPreviewProps)
               {results.map((result, index) => (
                 <Link
                   key={result.id}
+                  id={`search-option-${index}`}
                   href={`/${result.language.isoCode}/${result.slug}`}
                   onClick={() => handleResultClick(result)}
-                  className="block px-3 py-2 hover:bg-primary/5 border-b border-primary/10 last:border-b-0 transition-all duration-200 animate-in fade-in slide-in-from-top-1"
+                  role="option"
+                  aria-selected={selectedIndex === index}
+                  className={`block px-3 py-2 border-b border-primary/10 last:border-b-0 transition-all duration-200 animate-in fade-in slide-in-from-top-1 ${
+                    selectedIndex === index
+                      ? "bg-primary/10 outline-none"
+                      : "hover:bg-primary/5"
+                  }`}
                   style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'backwards' }}
                 >
                   <div className="flex items-center justify-between">
@@ -145,17 +211,24 @@ export default function SearchPreview({ defaultValue = "" }: SearchPreviewProps)
               ))}
               {results.length === 8 && (
                 <Link
+                  id={`search-option-${results.length}`}
                   href={`/search?q=${encodeURIComponent(query)}`}
                   onClick={() => setIsOpen(false)}
-                  className="block px-3 py-2 text-sm text-primary font-medium hover:bg-primary/5 text-center border-t border-primary/20 transition-all duration-200"
+                  role="option"
+                  aria-selected={selectedIndex === results.length}
+                  className={`block px-3 py-2 text-sm text-primary font-medium text-center border-t border-primary/20 transition-all duration-200 ${
+                    selectedIndex === results.length
+                      ? "bg-primary/10 outline-none"
+                      : "hover:bg-primary/5"
+                  }`}
                 >
                   View all results →
                 </Link>
               )}
             </>
           ) : query.trim().length >= 2 && !loading ? (
-            <div className="flex flex-col items-center justify-center gap-2 p-4 text-sm text-muted-foreground">
-              <Search className="h-5 w-5 text-muted-foreground/50" />
+            <div className="flex flex-col items-center justify-center gap-2 p-4 text-sm text-muted-foreground" role="status">
+              <Search className="h-5 w-5 text-muted-foreground/50" aria-hidden="true" />
               <span>No results found for &ldquo;{query}&rdquo;</span>
             </div>
           ) : null}

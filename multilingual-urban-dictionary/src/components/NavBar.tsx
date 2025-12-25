@@ -34,7 +34,7 @@ export default function NavBar() {
               {/* Shimmer ring on hover */}
               <div className="navbar-logo-ring absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </div>
-            <span className="hidden sm:block font-maragsa text-lg md:text-xl bg-gradient-to-br from-primary via-primary to-primary/80 bg-clip-text text-transparent transition-all duration-300 group-hover:tracking-wide">
+            <span className="hidden sm:block font-maragsa text-lg md:text-xl bg-gradient-to-br from-primary via-primary to-primary/80 bg-clip-text text-transparent">
               Yung Salita
             </span>
           </Link>

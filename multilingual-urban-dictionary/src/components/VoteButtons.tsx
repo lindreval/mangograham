@@ -67,7 +67,7 @@ export default function VoteButtons({
           result = await voteOnExample(id, value);
         }
 
-        if (result?.error) {
+        if ("error" in result) {
           // Revert to previous state on error
           setOptimisticVote(previousStateRef.current.userVote);
           toast({
