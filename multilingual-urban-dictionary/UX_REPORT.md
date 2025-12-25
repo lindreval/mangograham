@@ -15,71 +15,61 @@ Quick Wins (High Impact, Low Effort)
 
 1. Success Celebrations 🎉
 
-
-    - Add confetti animation on successful submissions
-    - Milestone celebrations (100th vote, first contribution, etc.)
-    - Files: src/components/SubmitForm.tsx, achievement system
+   - Add confetti animation on successful submissions
+   - Milestone celebrations (100th vote, first contribution, etc.)
+   - Files: src/components/SubmitForm.tsx, achievement system
 
 2. Character Counters ✍️
 
-
-    - Show "150/500 characters" on all text fields
-    - Real-time validation feedback with green checkmarks
-    - Files: FeedbackForm.tsx, EditProfileModal.tsx
+   - Show "150/500 characters" on all text fields
+   - Real-time validation feedback with green checkmarks
+   - Files: FeedbackForm.tsx, EditProfileModal.tsx
 
 3. Enhanced Error Messages 💬
 
-
-    - Context-specific guidance instead of generic errors
-    - "Connection lost? Check internet" vs "Phrase doesn't exist - want to add it?"
-    - File: src/app/error.tsx
+   - Context-specific guidance instead of generic errors
+   - "Connection lost? Check internet" vs "Phrase doesn't exist - want to add it?"
+   - File: src/app/error.tsx
 
 4. Search Result Highlighting 🔍
 
-
-    - Bold matching text in SearchPreview
-    - Add recent searches (localStorage)
-    - File: src/components/SearchPreview.tsx:SearchPreview.tsx:1
+   - Bold matching text in SearchPreview
+   - Add recent searches (localStorage)
+   - File: src/components/SearchPreview.tsx:SearchPreview.tsx:1
 
 5. Skip Links ♿
 
-
-    - Add "Skip to main content" for keyboard users
-    - 30 min accessibility win
+   - Add "Skip to main content" for keyboard users
+   - 30 min accessibility win
 
 Medium Impact Enhancements
 
 6. Wilson Score Voting Algorithm 📊
 
-
-    - Replace simple vote counting with confidence-based ranking
-    - Prevents early-contribution bias (like Reddit/Stack Overflow)
-    - Benefits newer high-quality definitions
-    - File: src/app/actions/vote.ts
+   - Replace simple vote counting with confidence-based ranking
+   - Prevents early-contribution bias (like Reddit/Stack Overflow)
+   - Benefits newer high-quality definitions
+   - File: src/app/actions/vote.ts
 
 7. Command Palette ⌘K
 
-
-    - Quick actions menu (Cmd/Ctrl+K)
-    - Jump to: Submit, Search, Profile, Languages
-    - Premium feature users expect
+   - Quick actions menu (Cmd/Ctrl+K)
+   - Jump to: Submit, Search, Profile, Languages
+   - Premium feature users expect
 
 8. Mobile Bottom Navigation 📱
 
-
-    - Bottom tab bar for primary actions
-    - Better reachability on large phones
-    - File: src/components/NavBar.tsx:NavBar.tsx:1
+   - Bottom tab bar for primary actions
+   - Better reachability on large phones
+   - File: src/components/NavBar.tsx:NavBar.tsx:1
 
 9. Page Transition Animations ✨
 
-
-    - Smooth transitions between routes
-    - You already have animate-page-enter defined but inconsistently applied
-    - Use View Transitions API or Framer Motion
+   - Smooth transitions between routes
+   - You already have animate-page-enter defined but inconsistently applied
+   - Use View Transitions API or Framer Motion
 
 10. Social Sharing 🔗
-
 
     - "Share this phrase" button
     - Dynamic OG images with @vercel/og
@@ -89,13 +79,11 @@ Premium Differentiators
 
 11. Personalized Homepage 🎯
 
-
     - Show phrases in user's preferred languages
     - "For You" feed based on interaction patterns
     - Toggle: For You / Following / Recent / Trending
 
 12. Advanced Search 🔎
-
 
     - Fuzzy matching (typo correction)
     - Transliteration support ("arigato" → "ありがとう")
@@ -104,7 +92,6 @@ Premium Differentiators
 
 13. Profile Enhancements 👤
 
-
     - GitHub-style activity graph
     - Badge system (Early Adopter, Language Expert)
     - Reputation levels with titles (Newbie → Legend)
@@ -112,12 +99,10 @@ Premium Differentiators
 
 14. Pull-to-Refresh 📲
 
-
     - Native mobile feel
     - Haptic feedback (visual pulse for web)
 
 15. Block-Based Editor 📝
-
 
     - Notion-style editing for definitions
     - "/" command menu for formatting
