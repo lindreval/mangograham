@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import PhraseCard, { PhraseWithLang } from "./PhraseCard";
+import StaggeredList from "./ui/staggered-list";
 
 interface APIPhrase {
   id: number;
@@ -109,17 +110,26 @@ export default function InfiniteScrollSearch({ initialPhrases, query }: Infinite
     }
   }, [query, page, loading, hasMore]);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.innerHeight + document.documentElement.scrollTop 
-          >= document.documentElement.offsetHeight - 1000) {
-        loadMorePhrases();
-      }
-    };
+  // Sentinel ref for IntersectionObserver
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [loadMorePhrases]);
+  // Use IntersectionObserver instead of scroll events for better performance
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loading && hasMore) {
+          loadMorePhrases();
+        }
+      },
+      { rootMargin: "1000px" } // Trigger 1000px before reaching bottom
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [loading, hasMore, loadMorePhrases]);
 
   // Reset when query changes
   useEffect(() => {
@@ -130,20 +140,25 @@ export default function InfiniteScrollSearch({ initialPhrases, query }: Infinite
 
   return (
     <div className="space-y-4">
-      {phrases.map((phrase) => (
-        <div key={phrase.id} className="transition-transform duration-300 hover:scale-102">
-          <PhraseCard phrase={phrase} />
-        </div>
-      ))}
-      
+      <StaggeredList className="space-y-4" staggerDelay={60} animationDuration={400}>
+        {phrases.map((phrase) => (
+          <div key={phrase.id} className="transition-transform duration-300 hover:scale-[1.01]">
+            <PhraseCard phrase={phrase} />
+          </div>
+        ))}
+      </StaggeredList>
+
+      {/* Sentinel element for IntersectionObserver */}
+      <div ref={sentinelRef} className="h-1" aria-hidden="true" />
+
       {loading && (
         <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       )}
-      
+
       {!hasMore && phrases.length > 0 && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-muted-foreground">
           You made it to the bottom!
         </div>
       )}

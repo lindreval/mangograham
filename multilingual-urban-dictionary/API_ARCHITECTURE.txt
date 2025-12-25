@@ -1,0 +1,361 @@
+================================================================================
+                    MULTILINGUAL URBAN DICTIONARY - BACKEND ARCHITECTURE
+================================================================================
+
+PROJECT LOCATION:
+/Users/lourdrickvalsote/Documents/Projects/dev/mangograham/multilingual-urban-dictionary
+
+================================================================================
+                                TECH STACK
+================================================================================
+
+Frontend:        Next.js (App Router) - React
+Database:        PostgreSQL
+ORM:             Prisma Client
+Authentication:  NextAuth.js (Google OAuth)
+Session:         Database Sessions (not JWT)
+Language:        TypeScript
+
+================================================================================
+                            DATABASE STRUCTURE
+================================================================================
+
+                                  User
+                    ┌──────────────┼──────────────┐
+                    │              │              │
+                ┌─→ Definition  ┌─→ Example   ┌─→ Phrase
+                │  (many)       │  (many)     │  (many)
+                │               │             │
+              ┌─┴──→ DefinitionVote          │
+              │      (one-to-one)             │
+              │                               │
+              └──────────────┬────────────────┘
+                             │
+                     ┌──────┬┴┬──────┐
+                     │      │ │      │
+                 (votes) (votes)(tags)
+                     │      │ │      │
+                  (DEF)  (EX)(PT)
+                     │      │ │      │
+                ExampleVote  PhraseTag
+
+
+Core Models:
+- User (profiles, auth, reputation, achievements)
+- Language (language definitions)
+- Phrase (terms/words in languages)
+- Definition (explanations of phrases)
+- Example (usage examples)
+- DefinitionVote & ExampleVote (rating system)
+- Achievement & UserAchievement (gamification)
+- Tag & PhraseTag (content organization)
+- Feedback (user feedback)
+
+================================================================================
+                            API ROUTE STRUCTURE
+================================================================================
+
+                            /api
+                    ┌───────┬┴┬───────┬──┐
+                    │       │ │       │  │
+              /achievements     /admin
+              /auth              /contributions
+              /feedback          /flag-definition
+              /languages         /language-phrases
+              /phrases           /profile
+              /search            /search-preview
+              /tags
+
+Admin Subroutes (all protected):
+/admin/phrases
+  ├── GET (list pending)
+  ├── /action (POST - single)
+  └── /bulk-action (POST - multiple)
+  └── /edit-phrase/[id] (PUT)
+
+/admin/definitions
+  ├── GET (list pending)
+  ├── /action (POST - single)
+  └── /bulk-action (POST - multiple)
+
+/admin/examples
+  ├── GET (list pending)
+  ├── /action (POST - single)
+  └── /bulk-action (POST - multiple)
+
+================================================================================
+                        ENDPOINT CLASSIFICATION
+================================================================================
+
+PUBLIC (no auth):
+  [12 endpoints]
+  - GET /api/phrases
+  - GET /api/search
+  - GET /api/languages
+  - GET /api/language-phrases
+  - GET /api/languages/[id]/contributors
+  - GET /api/tags
+  - GET /api/search-preview
+  - GET /api/sitemap.xml
+
+AUTHENTICATED USER (requires login):
+  [5 endpoints]
+  - PUT /api/profile
+  - DELETE /api/profile
+  - GET /api/contributions
+  - GET /api/achievements/poll
+  - POST /api/feedback
+  - POST /api/tags
+  - POST /api/flag-definition
+
+ADMIN ONLY (role === 'admin'):
+  [8 endpoints]
+  - GET /api/admin/phrases
+  - POST /api/admin/phrases/action
+  - POST /api/admin/phrases/bulk-action
+  - GET /api/admin/definitions
+  - POST /api/admin/definitions/action
+  - POST /api/admin/definitions/bulk-action
+  - GET /api/admin/examples
+  - POST /api/admin/examples/action
+  - POST /api/admin/examples/bulk-action
+  - PUT /api/admin/edit-phrase/[id]
+
+OAUTH:
+  - POST /api/auth/[...nextauth]
+
+================================================================================
+                        REQUEST/RESPONSE PATTERNS
+================================================================================
+
+COMMON QUERY PARAMETERS:
+  page (number, default: 1)
+  limit (number, default: 10-20)
+  sortBy ("recent" | "upvotes" | "oldest")
+  type ("phrases" | "definitions" | "examples")
+  period ("all-time" | "weekly" | "monthly")
+
+PAGINATION RESPONSE:
+  {
+    data: T[]
+    hasMore: boolean
+    [totalCount?]: number
+    [currentPage?]: number
+  }
+
+ERROR RESPONSE:
+  {
+    error: string
+    [details?]: string
+  }
+
+SUCCESS RESPONSE:
+  {
+    success: true
+    [message?]: string
+    [data?]: T
+  }
+
+================================================================================
+                        CORE SERVICES & UTILITIES
+================================================================================
+
+AchievementService (/lib/achievements.ts)
+  Methods:
+    - initializeUserAchievements(userId)
+    - ensureUserInitialized(userId)
+    - checkAndAwardAchievements(userId, triggerType)
+    - awardAchievement(userId, achievementId)
+    - getUserAchievements(userId)
+    - getAchievementProgress(userId)
+    - seedAchievements()
+
+ReputationSystem (/lib/reputation.ts)
+  Methods:
+    - calculateUserReputation(userId)
+    - updateUserReputation(userId)
+    - getReputationLevel(reputation)
+  Levels: Newbie → Helper → Contributor → Expert → Legend
+
+AuthConfig (/lib/auth.ts)
+  - NextAuth.js configuration
+  - Google OAuth provider
+  - Database session strategy
+  - Auto-username generation on signup
+
+PrismaClient (/lib/prisma.ts)
+  - Singleton pattern
+  - Global instance for development hot reloads
+
+Utilities (/lib/utils.ts)
+  - cn() - Tailwind className merge utility
+
+================================================================================
+                        AUTHENTICATION FLOW
+================================================================================
+
+Login:
+  1. User clicks "Sign in with Google"
+  2. Redirected to Google OAuth consent
+  3. Google returns credentials
+  4. User created in DB with auto-generated username
+  5. Database session created
+  6. Cookies set with session token
+
+Session Structure:
+  {
+    user: {
+      id: string (CUID)
+      role: "user" | "admin"
+      name?: string
+      email?: string
+      image?: string
+    }
+  }
+
+Logout:
+  - Session deleted from database
+  - Cookies cleared
+
+Protected Endpoint Pattern:
+  const session = await getServerSession(authConfig)
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+Admin Check Pattern:
+  if (session.user?.role !== "admin") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
+  }
+
+================================================================================
+                        CONTENT STATUS FLOW
+================================================================================
+
+Submission Status Flow:
+
+  User Submits
+      ↓
+  "pending" status
+      ↓
+  ┌─────────────────────────────────────┐
+  │  Admin Reviews on Moderation Panel   │
+  └─────────────────────────────────────┘
+      ↓
+      ├→ APPROVED → "approved" → Visible to public
+      │
+      ├→ REJECTED → "rejected" → Not visible
+      │
+      └→ [Stays pending if not acted upon]
+
+User Flagging:
+  Approved content → POST /api/flag-definition → Status becomes "needs review"
+  Admin can then approve/reject
+
+================================================================================
+                        REPUTATION CALCULATION
+================================================================================
+
+Points Per Action:
+  Definition upvote:         +2 points
+  Definition downvote:       -1 point
+  Example upvote:            +1 point
+  Example downvote:          -0.5 points
+  Approved phrase:           +1 point
+
+Levels (by total reputation):
+  Level         Reputation Range    Badge Color
+  Newbie        0-24                Gray
+  Helper        25-99               Green
+  Contributor   100-499             Blue
+  Expert        500-999             Yellow
+  Legend        1000+               Purple
+
+================================================================================
+                        COMMON PATTERNS
+================================================================================
+
+Error Handling:
+  try {
+    // endpoint logic
+    return NextResponse.json(successData)
+  } catch (error) {
+    console.error("Error:", error)
+    return NextResponse.json(
+      { error: "Human-readable message" },
+      { status: 500 }
+    )
+  }
+
+Pagination:
+  const page = parseInt(searchParams.get("page") || "1")
+  const limit = parseInt(searchParams.get("limit") || "20")
+  const skip = (page - 1) * limit
+  
+  // Query with skip/take
+  const items = await prisma.model.findMany({
+    skip, take: limit, ...
+  })
+  
+  return NextResponse.json({
+    data: items,
+    hasMore: items.length === limit
+  })
+
+Relationship Includes:
+  const item = await prisma.definition.findUnique({
+    where: { id: definitionId },
+    include: {
+      phrase: { include: { language: true } },
+      votes: true,
+      examples: { include: { votes: true } }
+    }
+  })
+
+================================================================================
+                            FILE LOCATIONS
+================================================================================
+
+API Routes:
+  /src/app/api/[endpoint]/route.ts
+
+Services:
+  /src/lib/auth.ts
+  /src/lib/achievements.ts
+  /src/lib/reputation.ts
+  /src/lib/achievement-definitions.ts
+  /src/lib/achievementNotificationService.ts
+
+Database:
+  /prisma/schema.prisma
+
+Documentation (Generated):
+  /BACKEND_API_SUMMARY.md         (comprehensive)
+  /API_QUICK_REFERENCE.md         (quick lookup)
+
+================================================================================
+                            SUMMARY STATISTICS
+================================================================================
+
+Total API Routes:              25+ endpoints
+Public Routes:                 12
+Authenticated Routes:          5
+Admin-Protected Routes:        8
+
+Database Models:               12 core entities
+Primary Auth:                  Google OAuth
+Session Strategy:              Database (not JWT)
+Status Codes Used:             5 standard (200, 201, 400, 401, 403, 404, 500)
+
+Key Features:
+  - User authentication & profiles
+  - Content contribution & moderation
+  - Voting system (definitions & examples)
+  - Achievement & gamification system
+  - Reputation tracking
+  - Admin content management
+  - Multi-language support
+  - Content flagging
+  - User feedback system
+
+================================================================================

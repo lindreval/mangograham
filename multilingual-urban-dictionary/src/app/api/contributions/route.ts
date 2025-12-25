@@ -2,20 +2,36 @@ import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authConfig } from "@/lib/auth";
+import { contributionsQuerySchema } from "@/lib/validations";
+
+// TODO: Add rate limiting (Upstash Redis)
 
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authConfig);
-  
+
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const searchParams = request.nextUrl.searchParams;
-  const page = parseInt(searchParams.get("page") || "1");
-  const limit = parseInt(searchParams.get("limit") || "10");
-  const type = searchParams.get("type") || "phrases"; // phrases, definitions, examples
-  const sortBy = searchParams.get("sortBy") || "recent"; // recent, upvotes, oldest
-  const userId = searchParams.get("userId") || session.user.id; // Allow fetching other users' contributions
+  // Validate query parameters with Zod
+  const parseResult = contributionsQuerySchema.safeParse({
+    page: request.nextUrl.searchParams.get("page"),
+    limit: request.nextUrl.searchParams.get("limit"),
+    type: request.nextUrl.searchParams.get("type"),
+    sortBy: request.nextUrl.searchParams.get("sortBy"),
+    userId: request.nextUrl.searchParams.get("userId"),
+  });
+
+  if (!parseResult.success) {
+    return NextResponse.json(
+      { error: parseResult.error.errors.map(e => e.message).join(", ") },
+      { status: 400 }
+    );
+  }
+
+  const { page, limit, type, sortBy, userId: requestedUserId } = parseResult.data;
+  // Note: Contributions are public (visible on user profiles), so allowing userId parameter is intentional
+  const userId = requestedUserId || session.user.id;
   const skip = (page - 1) * limit;
 
   try {

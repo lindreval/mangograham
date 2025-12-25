@@ -2,20 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authConfig } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { flagContentSchema, validateRequestBody } from '@/lib/validations';
+
+// TODO: Add rate limiting (Upstash Redis) - limit to 20 flags/day per user
 
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authConfig);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { definitionId, exampleId, phraseId } = await request.json();
-    
-    if (!definitionId && !exampleId && !phraseId) {
-      return NextResponse.json({ error: 'Definition ID, Example ID, or Phrase ID is required' }, { status: 400 });
+    // Validate request body with Zod
+    const validation = await validateRequestBody(request, flagContentSchema);
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
+
+    const { definitionId, exampleId, phraseId } = validation.data;
 
     const flagCount = [definitionId, exampleId, phraseId].filter(Boolean).length;
     if (flagCount > 1) {
