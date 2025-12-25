@@ -7,6 +7,18 @@ import { CheckCircle2, Loader2, Info } from "lucide-react";
 import TagSelector from "@/components/TagSelector";
 import { AchievementNotificationService } from "@/lib/achievementNotificationService";
 import { triggerAchievementPolling } from "@/hooks/useAchievementPolling";
+import safeConfetti from "@/lib/confetti";
+import { CharacterCounter } from "@/components/ui/CharacterCounter";
+
+// Character limits for submission fields
+const CHAR_LIMITS = {
+  phrase: 100,
+  transliteration: 100,
+  region: 100,
+  definition: 1000,
+  example: 300,
+  exampleTranslation: 300,
+};
 
 interface Language {
   id: number;
@@ -96,6 +108,9 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
 
       const result = await createSubmission(formData);
 
+      // Celebrate successful submission with confetti
+      safeConfetti.success();
+
       if (result?.achievements && result.achievements.length > 0) {
         AchievementNotificationService.storeForLaterNotification(
           result.achievements
@@ -104,28 +119,32 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
 
       triggerAchievementPolling();
 
-      if (result && result.slug) {
-        if (
-          "language" in result &&
-          result.language &&
-          typeof result.language === "object" &&
-          "isoCode" in result.language
-        ) {
-          window.location.href = `/${result.language.isoCode}/${result.slug}`;
-        } else {
-          const selectedLang = languages.find(
-            (lang) =>
-              lang.id === parseInt(formData.get("languageId") as string)
-          );
-          if (selectedLang) {
-            window.location.href = `/${selectedLang.isoCode}/${result.slug}`;
+      // Small delay to let confetti animation start before navigation
+      setTimeout(() => {
+        if (result && result.slug) {
+          if (
+            "language" in result &&
+            result.language &&
+            typeof result.language === "object" &&
+            "isoCode" in result.language
+          ) {
+            window.location.href = `/${result.language.isoCode}/${result.slug}`;
           } else {
-            window.location.href = "/";
+            const selectedLang = languages.find(
+              (lang) =>
+                lang.id === parseInt(formData.get("languageId") as string)
+            );
+            if (selectedLang) {
+              window.location.href = `/${selectedLang.isoCode}/${result.slug}`;
+            } else {
+              window.location.href = "/";
+            }
           }
+        } else {
+          window.location.href = "/";
         }
-      } else {
-        window.location.href = "/";
-      }
+      }, 500);
+
     } catch (error) {
       console.error("Submission failed:", error);
       setIsSubmitting(false);
@@ -271,7 +290,14 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
               onChange={(e) => !isExistingPhrase && setPhrase(e.target.value)}
               disabled={!!isExistingPhrase}
               required={!isExistingPhrase}
+              maxLength={CHAR_LIMITS.phrase}
             />
+            {!isExistingPhrase && (
+              <CharacterCounter
+                current={phrase.length}
+                max={CHAR_LIMITS.phrase}
+              />
+            )}
             {isExistingPhrase && (
               <input type="hidden" name="phrase" value={preFilledPhrase} />
             )}
@@ -287,6 +313,7 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
                 name="transliteration"
                 className="w-full rounded-lg border-2 border-primary/20 bg-[var(--off-white)] p-3 text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 placeholder="e.g. 'daebak' instead of 대박"
+                maxLength={CHAR_LIMITS.transliteration}
                 required
               />
             </label>
@@ -305,6 +332,7 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
                 name="region"
                 className="w-full rounded-lg border-2 border-primary/20 bg-[var(--off-white)] p-3 text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 placeholder="e.g. Mexico City, California, Manila"
+                maxLength={CHAR_LIMITS.region}
               />
               <p className="text-xs text-muted-foreground mt-1.5">
                 Specify the geographic region where this phrase is commonly used
@@ -366,7 +394,12 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
                   ? setExample(e.target.value)
                   : setDefinition(e.target.value)
               }
+              maxLength={isExistingDefinition ? CHAR_LIMITS.example : CHAR_LIMITS.definition}
               required={!isExistingDefinition}
+            />
+            <CharacterCounter
+              current={isExistingDefinition ? example.length : definition.length}
+              max={isExistingDefinition ? CHAR_LIMITS.example : CHAR_LIMITS.definition}
             />
           </label>
 
@@ -385,6 +418,7 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
                   className="w-full rounded-lg border-2 border-primary/20 bg-[var(--off-white)] p-3 text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
                   rows={2}
                   placeholder="e.g. ¡Qué chido está tu carro!"
+                  maxLength={CHAR_LIMITS.example}
                 />
               </label>
 
@@ -400,6 +434,7 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
                   className="w-full rounded-lg border-2 border-primary/20 bg-[var(--off-white)] p-3 text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
                   rows={2}
                   placeholder="e.g. Your car is so cool!"
+                  maxLength={CHAR_LIMITS.exampleTranslation}
                 />
               </label>
             </>
@@ -418,6 +453,7 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
                 className="w-full rounded-lg border-2 border-primary/20 bg-[var(--off-white)] p-3 text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
                 rows={2}
                 placeholder="e.g. Your car is so cool!"
+                maxLength={CHAR_LIMITS.exampleTranslation}
               />
             </label>
           )}

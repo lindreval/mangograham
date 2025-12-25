@@ -4,9 +4,13 @@
 import { Achievement } from '@prisma/client';
 import { toast } from '@/hooks/use-toast';
 import { ToastAction } from '@/components/ui/toast';
+import safeConfetti from '@/lib/confetti';
 
 // Helper function to show achievement notification
 export function showAchievementNotification(achievement: Achievement) {
+  // Trigger confetti based on achievement tier
+  safeConfetti.achievement(achievement.tier || 1);
+
   toast({
     variant: "achievement",
     duration: 6000, // Show for 6 seconds
@@ -26,8 +30,8 @@ export function showAchievementNotification(achievement: Achievement) {
       </div>
     ),
     action: (
-      <ToastAction 
-        altText="View Profile" 
+      <ToastAction
+        altText="View Profile"
         onClick={() => window.location.href = '/profile'}
       >
         View Profile
@@ -39,15 +43,18 @@ export function showAchievementNotification(achievement: Achievement) {
 // Helper function to show multiple achievements at once
 export function showMultipleAchievementNotifications(achievements: Achievement[]) {
   if (achievements.length === 0) return;
-  
+
   if (achievements.length === 1) {
     showAchievementNotification(achievements[0]);
     return;
   }
-  
+
+  // Trigger milestone confetti for multiple achievements
+  safeConfetti.milestone();
+
   // Show summary notification for multiple achievements
   const totalPoints = achievements.reduce((sum, achievement) => sum + achievement.points, 0);
-  
+
   toast({
     variant: "achievement",
     duration: 8000, // Show longer for multiple achievements
@@ -70,8 +77,8 @@ export function showMultipleAchievementNotifications(achievements: Achievement[]
       </div>
     ),
     action: (
-      <ToastAction 
-        altText="View Profile" 
+      <ToastAction
+        altText="View Profile"
         onClick={() => window.location.href = '/profile'}
       >
         View Profile

@@ -32,7 +32,7 @@ export default async function LanguagesPage() {
   const totalPhrases = languages.reduce((sum, l) => sum + l._count.phrases, 0);
 
   return (
-    <main className="mx-auto max-w-5xl p-4 md:p-6">
+    <main className="mx-auto max-w-5xl p-4 md:p-6 animate-page-enter">
       <PageHeader
         title="Languages"
         subtitle="Explore slang and expressions from around the world"

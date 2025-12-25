@@ -84,7 +84,7 @@ export default function PhraseCard({ phrase }: { phrase: PhraseWithLang }) {
         className={`
           rounded-[20px] border-4 border-primary bg-card text-card-foreground p-5
           shadow-card hover:shadow-card-hover hover:-translate-y-1.5 hover:border-primary/80
-          transition-all duration-[250ms] ease-[cubic-bezier(0.34,0,0.12,1)]
+          transition-all duration-[var(--duration-hover)] ease-[var(--ease-smooth)]
           cursor-pointer relative overflow-hidden
           ${isNSFW && !showNSFW ? "" : ""}
         `}

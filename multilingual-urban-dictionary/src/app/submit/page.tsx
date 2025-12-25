@@ -54,7 +54,7 @@ export default async function SubmitPage() {
   const langs = await prisma.language.findMany({ orderBy: { name: "asc" } });
 
   return (
-    <main className="relative mx-auto max-w-xl p-4 md:p-6 space-y-6">
+    <main className="relative mx-auto max-w-xl p-4 md:p-6 space-y-6 animate-page-enter">
       {/* Subtle background accent */}
       <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-1/2 w-[400px] h-[400px] bg-primary/[0.02] rounded-full blur-3xl -translate-x-1/2" />

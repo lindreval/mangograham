@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import safeConfetti from "@/lib/confetti";
+import { CharacterCounter } from "@/components/ui/CharacterCounter";
 
 const feedbackTypes = [
   { value: "bug-report", label: "Bug Report" },
@@ -17,6 +19,12 @@ const feedbackTypes = [
   { value: "language-support", label: "Language Support" },
   { value: "other", label: "Other" },
 ];
+
+// Character limits
+const CHAR_LIMITS = {
+  subject: 150,
+  message: 2000,
+};
 
 export default function FeedbackForm() {
   const { data: session } = useSession();
@@ -74,6 +82,8 @@ export default function FeedbackForm() {
 
       if (response.ok) {
         setSubmitStatus("success");
+        // Celebrate feedback submission with special confetti
+        safeConfetti.feedback();
         setFormData({
           type: "",
           subject: "",
@@ -104,7 +114,7 @@ export default function FeedbackForm() {
             <Label htmlFor="type">Feedback Type</Label>
             <Select value={formData.type} onValueChange={(value) => handleInputChange("type", value)}>
               <SelectTrigger
-                className="rounded-lg transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="rounded-lg transition-all duration-[var(--duration-hover)] ease-[var(--ease-smooth)] focus:border-primary focus:ring-2 focus:ring-primary/20"
                 aria-describedby={errors.type ? "type-error" : undefined}
                 aria-invalid={!!errors.type}
               >
@@ -128,9 +138,14 @@ export default function FeedbackForm() {
               value={formData.subject}
               onChange={(e) => handleInputChange("subject", e.target.value)}
               placeholder="Brief description of your feedback"
-              className="rounded-lg transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+              maxLength={CHAR_LIMITS.subject}
+              className="rounded-lg transition-all duration-[var(--duration-hover)] ease-[var(--ease-smooth)] focus:border-primary focus:ring-2 focus:ring-primary/20"
               aria-describedby={errors.subject ? "subject-error" : undefined}
               aria-invalid={!!errors.subject}
+            />
+            <CharacterCounter
+              current={formData.subject.length}
+              max={CHAR_LIMITS.subject}
             />
             {errors.subject && <p id="subject-error" className="text-sm text-destructive" role="alert">{errors.subject}</p>}
           </div>
@@ -143,9 +158,14 @@ export default function FeedbackForm() {
               onChange={(e) => handleInputChange("message", e.target.value)}
               placeholder="Please provide detailed feedback..."
               rows={5}
-              className="rounded-lg transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+              maxLength={CHAR_LIMITS.message}
+              className="rounded-lg transition-all duration-[var(--duration-hover)] ease-[var(--ease-smooth)] focus:border-primary focus:ring-2 focus:ring-primary/20"
               aria-describedby={errors.message ? "message-error" : undefined}
               aria-invalid={!!errors.message}
+            />
+            <CharacterCounter
+              current={formData.message.length}
+              max={CHAR_LIMITS.message}
             />
             {errors.message && <p id="message-error" className="text-sm text-destructive" role="alert">{errors.message}</p>}
           </div>
@@ -159,7 +179,7 @@ export default function FeedbackForm() {
                 value={formData.email}
                 onChange={(e) => handleInputChange("email", e.target.value)}
                 placeholder="your.email@example.com"
-                className="rounded-lg transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="rounded-lg transition-all duration-[var(--duration-hover)] ease-[var(--ease-smooth)] focus:border-primary focus:ring-2 focus:ring-primary/20"
                 aria-describedby={errors.email ? "email-error" : undefined}
                 aria-invalid={!!errors.email}
               />
@@ -168,20 +188,20 @@ export default function FeedbackForm() {
           )}
 
           {submitStatus === "success" && (
-            <div className="flex items-center gap-3 p-4 bg-primary/10 text-primary border border-primary/20 rounded-lg transition-all duration-200">
+            <div className="flex items-center gap-3 p-4 bg-primary/10 text-primary border border-primary/20 rounded-lg transition-all duration-[var(--duration-hover)] ease-[var(--ease-smooth)]">
               <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
               <p>Thank you for your feedback! We&apos;ll review it and get back to you if needed.</p>
             </div>
           )}
 
           {submitStatus === "error" && (
-            <div className="flex items-center gap-3 p-4 bg-destructive/10 text-destructive border border-destructive/20 rounded-lg transition-all duration-200">
+            <div className="flex items-center gap-3 p-4 bg-destructive/10 text-destructive border border-destructive/20 rounded-lg transition-all duration-[var(--duration-hover)] ease-[var(--ease-smooth)]">
               <AlertCircle className="h-5 w-5 flex-shrink-0" />
               <p>There was an error submitting your feedback. Please try again.</p>
             </div>
           )}
 
-          <Button type="submit" disabled={isSubmitting} className="w-full transition-all duration-200">
+          <Button type="submit" disabled={isSubmitting} className="w-full transition-all duration-[var(--duration-hover)] ease-[var(--ease-smooth)]">
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

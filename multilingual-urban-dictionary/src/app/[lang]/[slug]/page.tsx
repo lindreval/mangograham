@@ -156,7 +156,7 @@ export default async function PhrasePage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <main className="mx-auto max-w-4xl p-4 md:p-6 space-y-6">
+      <main className="mx-auto max-w-4xl p-4 md:p-6 space-y-6 animate-page-enter">
         {/* Hero Section */}
         <div className="space-y-4">
           {/* Main Hero Card */}

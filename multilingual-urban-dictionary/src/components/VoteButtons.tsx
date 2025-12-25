@@ -1,7 +1,7 @@
 // components/VoteButtons.tsx
 "use client";
 
-import { useTransition, useOptimistic, useRef } from "react";
+import { useTransition, useOptimistic, useRef, useEffect, useState } from "react";
 import { voteOnDefinition, voteOnExample } from "@/app/actions/vote";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { triggerAchievementPolling } from "@/hooks/useAchievementPolling";
@@ -19,7 +19,11 @@ export default function VoteButtons({
   userVote: number | null; // 1 for upvote, -1 for downvote, null for no vote
 }) {
   const [isPending, startTransition] = useTransition();
-  
+
+  // Animation trigger state
+  const [animationKey, setAnimationKey] = useState(0);
+  const previousScoreRef = useRef(score);
+
   // Optimistic state for instant UI updates
   const [optimisticVote, setOptimisticVote] = useOptimistic(
     { score, userVote },
@@ -36,7 +40,7 @@ export default function VoteButtons({
         // Changed vote (e.g., upvote -> downvote)
         scoreChange = newVote - state.userVote;
       }
-      
+
       return {
         score: state.score + scoreChange,
         userVote: newVote
@@ -46,6 +50,14 @@ export default function VoteButtons({
 
   // Store previous state for rollback on error
   const previousStateRef = useRef({ score, userVote });
+
+  // Trigger animation when score changes
+  useEffect(() => {
+    if (previousScoreRef.current !== optimisticVote.score) {
+      setAnimationKey(prev => prev + 1);
+      previousScoreRef.current = optimisticVote.score;
+    }
+  }, [optimisticVote.score]);
 
   const handleVote = (value: number) => {
     // Determine the new vote state
@@ -100,7 +112,7 @@ export default function VoteButtons({
         aria-label={optimisticVote.userVote === 1 ? `Remove upvote from ${type}` : `Upvote ${type}`}
         aria-pressed={optimisticVote.userVote === 1}
         className={`
-          disabled:opacity-50 p-1 rounded transition-all duration-200 hover:scale-110 active:scale-95
+          disabled:opacity-50 p-1 rounded transition-all duration-[var(--duration-hover)] ease-[var(--ease-smooth)] hover:scale-110 active:scale-95
           ${optimisticVote.userVote === 1
             ? 'bg-primary/15 text-primary'
             : 'hover:bg-primary/10 hover:text-primary'
@@ -110,7 +122,12 @@ export default function VoteButtons({
       >
         <ChevronUp className="h-4 w-4" aria-hidden="true" />
       </button>
-      <span className="text-sm font-medium min-w-[1.5rem] text-center" aria-live="polite" aria-atomic="true">
+      <span
+        key={animationKey}
+        className="text-sm font-medium min-w-[1.5rem] text-center inline-block animate-vote-change"
+        aria-live="polite"
+        aria-atomic="true"
+      >
         {optimisticVote.score}
       </span>
       <button
@@ -119,7 +136,7 @@ export default function VoteButtons({
         aria-label={optimisticVote.userVote === -1 ? `Remove downvote from ${type}` : `Downvote ${type}`}
         aria-pressed={optimisticVote.userVote === -1}
         className={`
-          disabled:opacity-50 p-1 rounded transition-all duration-200 hover:scale-110 active:scale-95
+          disabled:opacity-50 p-1 rounded transition-all duration-[var(--duration-hover)] ease-[var(--ease-smooth)] hover:scale-110 active:scale-95
           ${optimisticVote.userVote === -1
             ? 'bg-destructive/15 text-destructive'
             : 'hover:bg-destructive/10 hover:text-destructive'
