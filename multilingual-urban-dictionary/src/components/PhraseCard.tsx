@@ -97,6 +97,7 @@ export default function PhraseCard({ phrase }: { phrase: PhraseWithLang }) {
           <time
             dateTime={phrase.createdAt.toISOString()}
             className="text-[11px] text-muted-foreground/60 font-mono tabular-nums"
+            suppressHydrationWarning
           >
             {phrase.createdAt.toLocaleDateString()}
           </time>

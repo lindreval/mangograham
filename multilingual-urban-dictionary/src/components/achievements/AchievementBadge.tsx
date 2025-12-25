@@ -6,17 +6,17 @@ import { cva, type VariantProps } from 'class-variance-authority';
 
 // Extend badge variants for achievement-specific styles
 const achievementBadgeVariants = cva(
-  "cursor-pointer transition-all duration-200 hover:scale-105 relative group",
+  "cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-md relative group",
   {
     variants: {
       achievementState: {
-        completed: "bg-yellow-100 border-yellow-400 text-yellow-800 shadow-md",
-        locked: "bg-gray-100 border-gray-300 text-gray-400 cursor-default hover:scale-100",
-        inProgress: "bg-blue-50 border-blue-300 text-blue-600"
+        completed: "bg-yellow-100 border-yellow-400 text-yellow-800 shadow-md shadow-primary/20",
+        locked: "bg-slate-100 border-slate-300 text-slate-400 cursor-default hover:scale-100 hover:shadow-none",
+        inProgress: "bg-amber-100 border-amber-300 text-amber-800"
       },
       size: {
         sm: "px-2 py-1 text-xs min-w-8 min-h-8",
-        md: "px-3 py-2 text-sm min-w-12 min-h-12", 
+        md: "px-3 py-2 text-sm min-w-12 min-h-12",
         lg: "px-4 py-3 text-base min-w-16 min-h-16"
       }
     },
@@ -79,9 +79,9 @@ export function AchievementBadge({
         </span>
       )}
       {!isCompleted && !isLocked && progress > 0 && (
-        <div className="w-full bg-gray-200 rounded-full h-1">
-          <div 
-            className="bg-blue-500 h-1 rounded-full transition-all duration-300"
+        <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+          <div
+            className="bg-primary h-1.5 rounded-full transition-all duration-500 ease-out"
             style={{ width: `${Math.min(progressPercentage, 100)}%` }}
           />
         </div>
@@ -94,28 +94,28 @@ export function AchievementBadge({
       <div className="relative group">
         {badgeContent}
         {/* Tooltip */}
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10 max-w-xs">
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2.5 bg-card border-2 border-primary/20 text-foreground text-sm rounded-xl shadow-card-hover opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-10 max-w-xs">
           <div className="font-semibold text-center">{achievement.name}</div>
-          <div className="text-xs text-gray-300 text-center mt-1">
+          <div className="text-xs text-muted-foreground text-center mt-1">
             {achievement.description}
           </div>
           {achievement.points > 0 && (
-            <div className="text-xs text-yellow-300 text-center mt-1">
+            <div className="text-xs text-primary font-medium text-center mt-1">
               +{achievement.points} points
             </div>
           )}
           {!isCompleted && !isLocked && (
-            <div className="text-xs text-blue-300 text-center mt-1">
+            <div className="text-xs text-amber-600 text-center mt-1">
               Progress: {progress}/{maxProgress}
             </div>
           )}
           {isCompleted && (
-            <div className="text-xs text-green-300 text-center mt-1">
-              ✅ Completed!
+            <div className="text-xs text-primary font-medium text-center mt-1">
+              Completed!
             </div>
           )}
           {/* Tooltip arrow */}
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-card"></div>
         </div>
       </div>
     );

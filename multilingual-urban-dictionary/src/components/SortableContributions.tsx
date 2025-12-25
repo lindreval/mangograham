@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import StaggeredList from "@/components/ui/staggered-list";
 import { MessageCircle, ArrowUpDown } from "lucide-react";
 
 interface Phrase {
@@ -194,17 +195,17 @@ export default function SortableContributions({ phrases, definitions, examples }
                 </Link>
               </div>
             ) : (
-              <div className="space-y-4">
+              <StaggeredList className="space-y-4" staggerDelay={50} animationDuration={350}>
                 {sortedPhrases.map((phrase) => {
-                  const totalVotes = phrase.definitions.reduce((total, def) => 
+                  const totalVotes = phrase.definitions.reduce((total, def) =>
                     total + def.votes.reduce((sum, vote) => sum + vote.value, 0), 0
                   );
-                  
+
                   return (
-                    <Card key={phrase.id}>
+                    <Card key={phrase.id} className="transition-all duration-300 hover:shadow-lg">
                       <CardContent className="pt-4">
                         <div className="flex justify-between items-start mb-2">
-                          <Link 
+                          <Link
                             href={`/${phrase.language.isoCode}/${phrase.slug}`}
                             className="text-lg font-medium hover:underline"
                           >
@@ -220,13 +221,13 @@ export default function SortableContributions({ phrases, definitions, examples }
                             </Badge>
                           </div>
                         </div>
-                        
+
                         {phrase.partOfSpeech && (
                           <p className="text-sm text-muted-foreground mb-2">
                             Part of speech: {phrase.partOfSpeech}
                           </p>
                         )}
-                        
+
                         <div className="flex justify-between items-center text-xs text-muted-foreground">
                           <span>{new Date(phrase.createdAt).toLocaleDateString()}</span>
                           <div className="flex items-center gap-4">
@@ -240,7 +241,7 @@ export default function SortableContributions({ phrases, definitions, examples }
                     </Card>
                   );
                 })}
-              </div>
+              </StaggeredList>
             )}
           </TabsContent>
           
@@ -262,15 +263,15 @@ export default function SortableContributions({ phrases, definitions, examples }
                 </Link>
               </div>
             ) : (
-              <div className="space-y-4">
+              <StaggeredList className="space-y-4" staggerDelay={50} animationDuration={350}>
                 {sortedDefinitions.map((def) => {
                   const voteScore = def.votes.reduce((sum, vote) => sum + vote.value, 0);
-                  
+
                   return (
-                    <Card key={def.id}>
+                    <Card key={def.id} className="transition-all duration-300 hover:shadow-lg">
                       <CardContent className="pt-4">
                         <div className="flex justify-between items-start mb-2">
-                          <Link 
+                          <Link
                             href={`/${def.phrase.language.isoCode}/${def.phrase.slug}`}
                             className="text-lg font-medium hover:underline"
                           >
@@ -286,9 +287,9 @@ export default function SortableContributions({ phrases, definitions, examples }
                             </Badge>
                           </div>
                         </div>
-                        
+
                         <p className="text-sm mb-3 whitespace-pre-wrap">{def.body}</p>
-                        
+
                         <div className="flex justify-between items-center text-xs text-muted-foreground">
                           <span>{new Date(def.createdAt).toLocaleDateString()}</span>
                           <div className="flex items-center gap-4">
@@ -302,7 +303,7 @@ export default function SortableContributions({ phrases, definitions, examples }
                     </Card>
                   );
                 })}
-              </div>
+              </StaggeredList>
             )}
           </TabsContent>
           
@@ -324,15 +325,15 @@ export default function SortableContributions({ phrases, definitions, examples }
                 </Link>
               </div>
             ) : (
-              <div className="space-y-4">
+              <StaggeredList className="space-y-4" staggerDelay={50} animationDuration={350}>
                 {sortedExamples.map((example) => {
                   const voteScore = example.votes.reduce((sum, vote) => sum + vote.value, 0);
-                  
+
                   return (
-                    <Card key={example.id}>
+                    <Card key={example.id} className="transition-all duration-300 hover:shadow-lg">
                       <CardContent className="pt-4">
                         <div className="flex justify-between items-start mb-2">
-                          <Link 
+                          <Link
                             href={`/${example.definition.phrase.language.isoCode}/${example.definition.phrase.slug}`}
                             className="text-lg font-medium hover:underline"
                           >
@@ -348,15 +349,15 @@ export default function SortableContributions({ phrases, definitions, examples }
                             </Badge>
                           </div>
                         </div>
-                        
+
                         <p className="text-sm italic mb-1 whitespace-pre-wrap">&ldquo;{example.text}&rdquo;</p>
-                        
+
                         {example.translation && (
                           <p className="text-sm text-muted-foreground mb-2 whitespace-pre-wrap">
                             Translation: {example.translation}
                           </p>
                         )}
-                        
+
                         <div className="flex justify-between items-center text-xs text-muted-foreground">
                           <span>{new Date(example.createdAt).toLocaleDateString()}</span>
                           <span className={voteScore >= 0 ? "text-green-600" : "text-red-600"}>
@@ -367,7 +368,7 @@ export default function SortableContributions({ phrases, definitions, examples }
                     </Card>
                   );
                 })}
-              </div>
+              </StaggeredList>
             )}
           </TabsContent>
         </Tabs>

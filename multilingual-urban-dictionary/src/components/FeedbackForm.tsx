@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 
 const feedbackTypes = [
   { value: "bug-report", label: "Bug Report" },
@@ -102,7 +103,7 @@ export default function FeedbackForm() {
           <div className="space-y-2">
             <Label htmlFor="type">Feedback Type</Label>
             <Select value={formData.type} onValueChange={(value) => handleInputChange("type", value)}>
-              <SelectTrigger>
+              <SelectTrigger className="rounded-lg transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20">
                 <SelectValue placeholder="Select feedback type" />
               </SelectTrigger>
               <SelectContent>
@@ -113,7 +114,7 @@ export default function FeedbackForm() {
                 ))}
               </SelectContent>
             </Select>
-            {errors.type && <p className="text-sm text-red-500">{errors.type}</p>}
+            {errors.type && <p className="text-sm text-destructive">{errors.type}</p>}
           </div>
 
           <div className="space-y-2">
@@ -123,8 +124,9 @@ export default function FeedbackForm() {
               value={formData.subject}
               onChange={(e) => handleInputChange("subject", e.target.value)}
               placeholder="Brief description of your feedback"
+              className="rounded-lg transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
-            {errors.subject && <p className="text-sm text-red-500">{errors.subject}</p>}
+            {errors.subject && <p className="text-sm text-destructive">{errors.subject}</p>}
           </div>
 
           <div className="space-y-2">
@@ -135,8 +137,9 @@ export default function FeedbackForm() {
               onChange={(e) => handleInputChange("message", e.target.value)}
               placeholder="Please provide detailed feedback..."
               rows={5}
+              className="rounded-lg transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
-            {errors.message && <p className="text-sm text-red-500">{errors.message}</p>}
+            {errors.message && <p className="text-sm text-destructive">{errors.message}</p>}
           </div>
 
           {!session?.user?.email && (
@@ -148,25 +151,35 @@ export default function FeedbackForm() {
                 value={formData.email}
                 onChange={(e) => handleInputChange("email", e.target.value)}
                 placeholder="your.email@example.com"
+                className="rounded-lg transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
-              {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
+              {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
             </div>
           )}
 
           {submitStatus === "success" && (
-            <div className="p-4 bg-green-50 border border-green-200 rounded-md">
-              <p className="text-green-800">Thank you for your feedback! We&apos;ll review it and get back to you if needed.</p>
+            <div className="flex items-center gap-3 p-4 bg-primary/10 text-primary border border-primary/20 rounded-lg transition-all duration-200">
+              <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
+              <p>Thank you for your feedback! We&apos;ll review it and get back to you if needed.</p>
             </div>
           )}
 
           {submitStatus === "error" && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-red-800">There was an error submitting your feedback. Please try again.</p>
+            <div className="flex items-center gap-3 p-4 bg-destructive/10 text-destructive border border-destructive/20 rounded-lg transition-all duration-200">
+              <AlertCircle className="h-5 w-5 flex-shrink-0" />
+              <p>There was an error submitting your feedback. Please try again.</p>
             </div>
           )}
 
-          <Button type="submit" disabled={isSubmitting} className="w-full">
-            {isSubmitting ? "Submitting..." : "Submit Feedback"}
+          <Button type="submit" disabled={isSubmitting} className="w-full transition-all duration-200">
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              "Submit Feedback"
+            )}
           </Button>
         </form>
     </div>

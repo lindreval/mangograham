@@ -67,9 +67,9 @@ export default function FlagButton({ definitionId, exampleId, phraseId, onFlagge
       type="button"
       title={getTitle()}
       disabled={isLoading || isFlagged}
-      className={`flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors ${
-        isFlagged 
-          ? 'text-orange-600 bg-orange-50' 
+      className={`flex items-center gap-1 rounded px-2 py-1 text-xs transition-all duration-200 hover:scale-105 active:scale-95 ${
+        isFlagged
+          ? 'bg-destructive/15 text-destructive'
           : 'text-muted-foreground hover:bg-destructive/10 hover:text-destructive'
       } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
       onClick={handleFlag}

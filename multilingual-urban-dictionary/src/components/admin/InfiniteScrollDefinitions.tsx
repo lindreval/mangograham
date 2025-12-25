@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useInView } from "react-intersection-observer";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import StaggeredList from "@/components/ui/staggered-list";
 import PhraseCardSkeleton from "../PhraseCardSkeleton";
 
 type PendingDefinition = {
@@ -242,55 +243,57 @@ export function InfiniteScrollDefinitions() {
         )}
       </div>
       
-      {definitions.map((def) => (
-        <div key={def.id} className="rounded border p-4 shadow-sm bg-blue-50">
-          <div className="flex items-start gap-3">
-            <Checkbox
-              id={`definition-${def.id}`}
-              checked={selectedDefinitions.has(def.id)}
-              onCheckedChange={(checked) => handleSelectDefinition(def.id, checked as boolean)}
-              className="mt-1"
-            />
-            <div className="flex-1">
-          <div className="mb-2 text-sm text-muted-foreground">
-            <span className={`inline-block px-2 py-1 text-xs rounded-full mr-2 ${
-              def.status === 'needs review' 
-                ? 'bg-red-100 text-red-800' 
-                : 'bg-blue-100 text-blue-800'
-            }`}>
-              {def.status === 'needs review' ? 'Needs Review' : 'Pending Definition'}
-            </span>
-            <strong>{def.phrase.textOriginal}</strong> — {def.phrase.language.name}
-          </div>
-          <p className="mb-2 whitespace-pre-wrap">{def.body}</p>
-          {def.examples.length > 0 && (
-            <div className="mb-2 text-sm italic space-y-1">
-              {def.examples.map((ex, i) => (
-                <p key={i}>
-                  Example: {ex.text}
-                  {ex.translation && <> — Translation: {ex.translation}</>}
-                </p>
-              ))}
-            </div>
-          )}
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => handleAction(def.id, "approved")}
-                  className="rounded bg-green-600 px-4 py-1 text-white hover:bg-green-700"
-                >
-                  Approve
-                </button>
-                <button 
-                  onClick={() => handleAction(def.id, "rejected")}
-                  className="rounded bg-red-600 px-4 py-1 text-white hover:bg-red-700"
-                >
-                  Reject
-                </button>
+      <StaggeredList className="space-y-4" staggerDelay={50} animationDuration={350}>
+        {definitions.map((def) => (
+          <div key={def.id} className="rounded border p-4 shadow-sm bg-blue-50 transition-all duration-300 hover:shadow-md">
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id={`definition-${def.id}`}
+                checked={selectedDefinitions.has(def.id)}
+                onCheckedChange={(checked) => handleSelectDefinition(def.id, checked as boolean)}
+                className="mt-1"
+              />
+              <div className="flex-1">
+                <div className="mb-2 text-sm text-muted-foreground">
+                  <span className={`inline-block px-2 py-1 text-xs rounded-full mr-2 ${
+                    def.status === 'needs review'
+                      ? 'bg-red-100 text-red-800'
+                      : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    {def.status === 'needs review' ? 'Needs Review' : 'Pending Definition'}
+                  </span>
+                  <strong>{def.phrase.textOriginal}</strong> — {def.phrase.language.name}
+                </div>
+                <p className="mb-2 whitespace-pre-wrap">{def.body}</p>
+                {def.examples.length > 0 && (
+                  <div className="mb-2 text-sm italic space-y-1">
+                    {def.examples.map((ex, i) => (
+                      <p key={i}>
+                        Example: {ex.text}
+                        {ex.translation && <> — Translation: {ex.translation}</>}
+                      </p>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleAction(def.id, "approved")}
+                    className="rounded bg-green-600 px-4 py-1 text-white hover:bg-green-700"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    onClick={() => handleAction(def.id, "rejected")}
+                    className="rounded bg-red-600 px-4 py-1 text-white hover:bg-red-700"
+                  >
+                    Reject
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </StaggeredList>
 
       {hasMore && (
         <div ref={ref} className="flex justify-center py-4">

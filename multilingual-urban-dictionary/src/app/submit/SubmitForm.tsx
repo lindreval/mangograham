@@ -2,7 +2,8 @@
 
 import { useSearchParams } from "next/navigation";
 import { createSubmission } from "./actions";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { CheckCircle2, Loader2, Info } from "lucide-react";
 import TagSelector from "@/components/TagSelector";
 import { AchievementNotificationService } from "@/lib/achievementNotificationService";
 import { triggerAchievementPolling } from "@/hooks/useAchievementPolling";
@@ -34,63 +35,95 @@ interface Tag {
 export default function SubmitForm({ languages }: SubmitFormProps) {
   const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedLanguageId, setSelectedLanguageId] = useState(searchParams.get("languageId") || "");
+  const [selectedLanguageId, setSelectedLanguageId] = useState(
+    searchParams.get("languageId") || ""
+  );
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
-  
-  // Get pre-filled values from URL params
+
+  // Form field states for progress tracking
+  const [phrase, setPhrase] = useState(searchParams.get("phrase") || "");
+  const [definition, setDefinition] = useState("");
+  const [example, setExample] = useState("");
+
   const preFilledPhrase = searchParams.get("phrase") || "";
   const preFilledLanguageId = searchParams.get("languageId") || "";
   const preFilledDefinition = searchParams.get("definition") || "";
   const preFilledDefinitionId = searchParams.get("definitionId") || "";
-  
-  // Check if this is for an existing phrase (both phrase and language are pre-filled)
+
   const isExistingPhrase = preFilledPhrase && preFilledLanguageId;
-  // Check if this is for adding an example to an existing definition
-  const isExistingDefinition = isExistingPhrase && preFilledDefinition && preFilledDefinitionId;
-  
-  // Find the selected language and check if it requires transliteration
-  const selectedLanguage = languages.find(l => l.id.toString() === selectedLanguageId);
+  const isExistingDefinition =
+    isExistingPhrase && preFilledDefinition && preFilledDefinitionId;
+
+  const selectedLanguage = languages.find(
+    (l) => l.id.toString() === selectedLanguageId
+  );
   const requiresTransliteration = selectedLanguage?.transliteration || false;
 
+  // Calculate form progress
+  const progress = useMemo(() => {
+    if (isExistingDefinition) {
+      // Just needs example
+      return example.trim() ? 100 : 0;
+    }
+    if (isExistingPhrase) {
+      // Needs definition
+      return definition.trim() ? 100 : 0;
+    }
+    // New phrase: language + phrase + definition
+    const fields = [
+      selectedLanguageId !== "",
+      phrase.trim() !== "",
+      definition.trim() !== "",
+    ];
+    const completed = fields.filter(Boolean).length;
+    return Math.round((completed / 3) * 100);
+  }, [
+    selectedLanguageId,
+    phrase,
+    definition,
+    example,
+    isExistingPhrase,
+    isExistingDefinition,
+  ]);
+
   async function handleSubmit(formData: FormData) {
-    console.log("Setting isSubmitting to true");
     setIsSubmitting(true);
-    
+
     try {
-      // Add selected tag IDs to form data
       selectedTags.forEach((tag, index) => {
         formData.append(`tagIds[${index}]`, tag.id.toString());
       });
-      
-      console.log("Calling createSubmission");
+
       const result = await createSubmission(formData);
-      console.log("createSubmission completed", result);
-      
-      // Handle achievements before redirect
+
       if (result?.achievements && result.achievements.length > 0) {
-        // Store achievements for display after redirect
-        AchievementNotificationService.storeForLaterNotification(result.achievements);
+        AchievementNotificationService.storeForLaterNotification(
+          result.achievements
+        );
       }
-      
-      // Trigger achievement polling for background achievements
+
       triggerAchievementPolling();
-      
-      // Redirect back to the phrase page after successful submission
+
       if (result && result.slug) {
-        console.log("Redirecting to phrase page");
-        if ('language' in result && result.language && typeof result.language === 'object' && 'isoCode' in result.language) {
+        if (
+          "language" in result &&
+          result.language &&
+          typeof result.language === "object" &&
+          "isoCode" in result.language
+        ) {
           window.location.href = `/${result.language.isoCode}/${result.slug}`;
         } else {
-          // Fallback: use the selected language from form
-          const selectedLanguage = languages.find(lang => lang.id === parseInt(formData.get("languageId") as string));
-          if (selectedLanguage) {
-            window.location.href = `/${selectedLanguage.isoCode}/${result.slug}`;
+          const selectedLang = languages.find(
+            (lang) =>
+              lang.id === parseInt(formData.get("languageId") as string)
+          );
+          if (selectedLang) {
+            window.location.href = `/${selectedLang.isoCode}/${result.slug}`;
           } else {
             window.location.href = "/";
           }
         }
       } else {
-        console.log("Redirecting to home page");
         window.location.href = "/";
       }
     } catch (error) {
@@ -99,232 +132,329 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
     }
   }
 
+  const getContextTitle = () => {
+    if (isExistingDefinition) return `Add Example for "${preFilledPhrase}"`;
+    if (isExistingPhrase) return `Add Definition for "${preFilledPhrase}"`;
+    return "Add a Slang Phrase";
+  };
+
   return (
-    <div className="relative rounded-lg border-4 bg-card text-card-foreground p-6 shadow-elevation-medium">
+    <div className="relative rounded-xl border-2 border-primary/20 bg-card shadow-card overflow-hidden">
+      {/* Gradient accent bar */}
+      <div className="h-1 bg-gradient-to-r from-primary via-primary to-primary/60" />
+
+      {/* Progress indicator */}
+      <div className="px-6 pt-4">
+        <div className="flex items-center justify-between text-sm mb-2">
+          <span className="text-muted-foreground font-medium">Progress</span>
+          <span className="text-primary font-semibold">{progress}%</span>
+        </div>
+        <div className="h-2 bg-muted rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-500 ease-[var(--ease-smooth)]"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+
       {/* Loading Overlay */}
       {isSubmitting && (
-        <div className="absolute inset-0 bg-white/80 rounded-lg flex items-center justify-center z-50">
-          <div className="flex flex-col items-center gap-3 bg-white rounded-lg shadow-lg p-6">
-            <div className="animate-spin rounded-full h-8 w-8 border-4 border-var(--primary) border-t-transparent"></div>
-            <p className="text-sm font-medium text-gray-800">Submitting your content...</p>
+        <div className="absolute inset-0 bg-card/90 backdrop-blur-sm flex items-center justify-center z-50 rounded-xl">
+          <div className="flex flex-col items-center gap-4 p-8">
+            <div className="relative">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+              </div>
+            </div>
+            <div className="text-center">
+              <p className="font-semibold text-foreground">
+                Submitting your content...
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                This will only take a moment
+              </p>
+            </div>
           </div>
         </div>
       )}
-      
-      <div className={isSubmitting ? "opacity-50 pointer-events-none" : ""}>
-        <h1 className="text-2xl font-bold mb-6">
-        {isExistingDefinition 
-          ? `Add Example for "${preFilledPhrase}"` 
-          : isExistingPhrase 
-          ? `Add Definition for "${preFilledPhrase}"` 
-          : "Add a Slang Phrase"}
-      </h1>
-      
-      <form onSubmit={(e) => {
-        e.preventDefault();
-        setIsSubmitting(true); // Set loading state immediately
-        const formData = new FormData(e.currentTarget);
-        handleSubmit(formData);
-      }} className="space-y-4">
-      {isExistingDefinition && (
-        <div className="rounded-lg bg-green-50 border border-green-200 p-4 mb-4">
-          <h3 className="text-sm font-medium text-green-800 mb-1">
-            Adding example to existing definition
-          </h3>
-          <p className="text-xs text-green-600">
-            The language, phrase, and definition fields are pre-filled and cannot be changed.
-          </p>
-        </div>
-      )}
-      {isExistingPhrase && !isExistingDefinition && (
-        <div className="rounded-lg bg-blue-50 border border-blue-200 p-4 mb-4">
-          <h3 className="text-sm font-medium text-blue-800 mb-1">
-            Adding definition to existing phrase
-          </h3>
-          <p className="text-xs text-blue-600">
-            The language and phrase fields are pre-filled and cannot be changed.
-          </p>
-        </div>
-      )}
-      
-      <label className="block">
-        <span className="block font-medium">Language</span>
-        <select
-          name={isExistingPhrase ? "languageIdDisplay" : "languageId"}
-          className={`w-full rounded border p-2 ${
-            isExistingPhrase 
-              ? "bg-gray-100 text-gray-600 cursor-not-allowed" 
-              : ""
-          }`}
-          value={selectedLanguageId}
-          onChange={(e) => setSelectedLanguageId(e.target.value)}
-          disabled={!!isExistingPhrase}
-          required={!isExistingPhrase}
+
+      <div className={`p-6 ${isSubmitting ? "opacity-50 pointer-events-none" : ""}`}>
+        <h1 className="font-maragsa text-2xl md:text-3xl text-foreground mb-6">
+          {getContextTitle()}
+        </h1>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            setIsSubmitting(true);
+            const formData = new FormData(e.currentTarget);
+            handleSubmit(formData);
+          }}
+          className="space-y-5"
         >
-          <option value="">Select a language</option>
-          {languages.map((l) => (
-            <option key={l.id} value={l.id}>
-              {l.name}
-            </option>
-          ))}
-        </select>
-        {isExistingPhrase && (
-          <input
-            type="hidden"
-            name="languageId"
-            value={preFilledLanguageId}
-          />
-        )}
-      </label>
-      
-      <label className="block">
-        <span className="block font-medium">Phrase</span>
-        <input
-          name={isExistingPhrase ? "phraseDisplay" : "phrase"}
-          className={`w-full rounded border p-2 ${
-            isExistingPhrase 
-              ? "bg-gray-100 text-gray-600 cursor-not-allowed" 
-              : ""
-          }`}
-          placeholder="e.g. Qué chido"
-          defaultValue={preFilledPhrase}
-          disabled={!!isExistingPhrase}
-          required={!isExistingPhrase}
-        />
-        {isExistingPhrase && (
-          <input
-            type="hidden"
-            name="phrase"
-            value={preFilledPhrase}
-          />
-        )}
-      </label>
-      
-      {requiresTransliteration && !isExistingPhrase && (
-        <label className="block">
-          <span className="block font-medium">English Transliteration</span>
-          <input
-            name="transliteration"
-            className="w-full rounded border p-2"
-            placeholder="e.g. 'daebak' instead of 대박"
-            required
-          />
-        </label>
-      )}
+          {/* Context banners */}
+          {isExistingDefinition && (
+            <div className="flex items-start gap-3 rounded-lg bg-primary/5 border border-primary/20 p-4">
+              <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-sm font-medium text-foreground">
+                  Adding example to existing definition
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  The language, phrase, and definition fields are pre-filled.
+                </p>
+              </div>
+            </div>
+          )}
 
-      {!isExistingPhrase && (
-        <label className="block">
-          <span className="block font-medium">Where is it used? (Optional)</span>
-          <input
-            name="region"
-            className="w-full rounded border p-2"
-            placeholder="e.g. Mexico City, California, Manila"
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Specify the geographic region, city, or country where this phrase is commonly used
-          </p>
-        </label>
-      )}
+          {isExistingPhrase && !isExistingDefinition && (
+            <div className="flex items-start gap-3 rounded-lg bg-primary/5 border border-primary/20 p-4">
+              <Info className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-sm font-medium text-foreground">
+                  Adding definition to existing phrase
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  The language and phrase fields are pre-filled.
+                </p>
+              </div>
+            </div>
+          )}
 
-      {!isExistingPhrase && (
-        <div className="block">
-          <span className="block font-medium mb-2">Tags</span>
-          <TagSelector
-            selectedTags={selectedTags}
-            onTagsChange={setSelectedTags}
+          {/* Language field */}
+          <label className="block">
+            <span className="block font-medium text-foreground mb-2">
+              Language
+            </span>
+            <select
+              name={isExistingPhrase ? "languageIdDisplay" : "languageId"}
+              className={`w-full rounded-lg border-2 border-primary/20 bg-[var(--off-white)] p-3 text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 ${
+                isExistingPhrase
+                  ? "bg-muted text-muted-foreground cursor-not-allowed"
+                  : ""
+              }`}
+              value={selectedLanguageId}
+              onChange={(e) => setSelectedLanguageId(e.target.value)}
+              disabled={!!isExistingPhrase}
+              required={!isExistingPhrase}
+            >
+              <option value="">Select a language</option>
+              {languages.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.name}
+                </option>
+              ))}
+            </select>
+            {isExistingPhrase && (
+              <input
+                type="hidden"
+                name="languageId"
+                value={preFilledLanguageId}
+              />
+            )}
+          </label>
+
+          {/* Phrase field */}
+          <label className="block">
+            <span className="block font-medium text-foreground mb-2">
+              Phrase
+            </span>
+            <input
+              name={isExistingPhrase ? "phraseDisplay" : "phrase"}
+              className={`w-full rounded-lg border-2 border-primary/20 bg-[var(--off-white)] p-3 text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 ${
+                isExistingPhrase
+                  ? "bg-muted text-muted-foreground cursor-not-allowed"
+                  : ""
+              }`}
+              placeholder="e.g. Qué chido"
+              value={isExistingPhrase ? preFilledPhrase : phrase}
+              onChange={(e) => !isExistingPhrase && setPhrase(e.target.value)}
+              disabled={!!isExistingPhrase}
+              required={!isExistingPhrase}
+            />
+            {isExistingPhrase && (
+              <input type="hidden" name="phrase" value={preFilledPhrase} />
+            )}
+          </label>
+
+          {/* Transliteration field */}
+          {requiresTransliteration && !isExistingPhrase && (
+            <label className="block">
+              <span className="block font-medium text-foreground mb-2">
+                English Transliteration
+              </span>
+              <input
+                name="transliteration"
+                className="w-full rounded-lg border-2 border-primary/20 bg-[var(--off-white)] p-3 text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                placeholder="e.g. 'daebak' instead of 대박"
+                required
+              />
+            </label>
+          )}
+
+          {/* Region field */}
+          {!isExistingPhrase && (
+            <label className="block">
+              <span className="block font-medium text-foreground mb-2">
+                Where is it used?{" "}
+                <span className="font-normal text-muted-foreground">
+                  (Optional)
+                </span>
+              </span>
+              <input
+                name="region"
+                className="w-full rounded-lg border-2 border-primary/20 bg-[var(--off-white)] p-3 text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                placeholder="e.g. Mexico City, California, Manila"
+              />
+              <p className="text-xs text-muted-foreground mt-1.5">
+                Specify the geographic region where this phrase is commonly used
+              </p>
+            </label>
+          )}
+
+          {/* Tags */}
+          {!isExistingPhrase && (
+            <div className="block">
+              <span className="block font-medium text-foreground mb-2">
+                Tags
+              </span>
+              <TagSelector
+                selectedTags={selectedTags}
+                onTagsChange={setSelectedTags}
+                disabled={isSubmitting}
+              />
+            </div>
+          )}
+
+          {/* Existing definition display */}
+          {isExistingDefinition && (
+            <label className="block">
+              <span className="block font-medium text-foreground mb-2">
+                Existing Definition
+              </span>
+              <textarea
+                name="existingDefinition"
+                className="w-full rounded-lg border-2 border-primary/10 bg-muted p-3 text-muted-foreground cursor-not-allowed resize-none"
+                rows={3}
+                defaultValue={preFilledDefinition}
+                disabled={true}
+                readOnly
+              />
+              <input
+                type="hidden"
+                name="definitionId"
+                value={preFilledDefinitionId}
+              />
+            </label>
+          )}
+
+          {/* Definition or Example field */}
+          <label className="block">
+            <span className="block font-medium text-foreground mb-2">
+              {isExistingDefinition ? "New Example Sentence" : "Definition"}
+            </span>
+            <textarea
+              name={isExistingDefinition ? "example" : "definition"}
+              className="w-full rounded-lg border-2 border-primary/20 bg-[var(--off-white)] p-3 text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+              rows={isExistingDefinition ? 2 : 4}
+              placeholder={
+                isExistingDefinition ? "e.g. ¡Qué chido está tu carro!" : ""
+              }
+              value={isExistingDefinition ? example : definition}
+              onChange={(e) =>
+                isExistingDefinition
+                  ? setExample(e.target.value)
+                  : setDefinition(e.target.value)
+              }
+              required={!isExistingDefinition}
+            />
+          </label>
+
+          {/* Example fields for new phrase/definition */}
+          {!isExistingDefinition && (
+            <>
+              <label className="block">
+                <span className="block font-medium text-foreground mb-2">
+                  Example Sentence{" "}
+                  <span className="font-normal text-muted-foreground">
+                    (Optional)
+                  </span>
+                </span>
+                <textarea
+                  name="example"
+                  className="w-full rounded-lg border-2 border-primary/20 bg-[var(--off-white)] p-3 text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                  rows={2}
+                  placeholder="e.g. ¡Qué chido está tu carro!"
+                />
+              </label>
+
+              <label className="block">
+                <span className="block font-medium text-foreground mb-2">
+                  Example Translation{" "}
+                  <span className="font-normal text-muted-foreground">
+                    (Optional)
+                  </span>
+                </span>
+                <textarea
+                  name="exampleTranslation"
+                  className="w-full rounded-lg border-2 border-primary/20 bg-[var(--off-white)] p-3 text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                  rows={2}
+                  placeholder="e.g. Your car is so cool!"
+                />
+              </label>
+            </>
+          )}
+
+          {isExistingDefinition && (
+            <label className="block">
+              <span className="block font-medium text-foreground mb-2">
+                Example Translation{" "}
+                <span className="font-normal text-muted-foreground">
+                  (Optional)
+                </span>
+              </span>
+              <textarea
+                name="exampleTranslation"
+                className="w-full rounded-lg border-2 border-primary/20 bg-[var(--off-white)] p-3 text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                rows={2}
+                placeholder="e.g. Your car is so cool!"
+              />
+            </label>
+          )}
+
+          {/* Submit button */}
+          <button
+            type="submit"
             disabled={isSubmitting}
-          />
-        </div>
-      )}
-      
-      {isExistingDefinition && (
-        <label className="block">
-          <span className="block font-medium">Existing Definition</span>
-          <textarea
-            name="existingDefinition"
-            className="w-full rounded border p-2 bg-gray-100 text-gray-600 cursor-not-allowed"
-            rows={3}
-            defaultValue={preFilledDefinition}
-            disabled={true}
-            readOnly
-          />
-          <input type="hidden" name="definitionId" value={preFilledDefinitionId} />
-        </label>
-      )}
-      
-      <label className="block">
-        <span className="block font-medium">
-          {isExistingDefinition ? "New Example Sentence" : "Definition"}
-        </span>
-        <textarea
-          name={isExistingDefinition ? "example" : "definition"}
-          className="w-full rounded border p-2"
-          rows={isExistingDefinition ? 2 : 4}
-          placeholder={isExistingDefinition ? "e.g. ¡Qué chido está tu carro!" : ""}
-          required={!isExistingDefinition}
-        />
-      </label>
-      
-      {!isExistingDefinition && (
-        <>
-          <label className="block">
-            <span className="block font-medium">Example Sentence</span>
-            <textarea
-              name="example"
-              className="w-full rounded border p-2"
-              rows={2}
-              placeholder="e.g. ¡Qué chido está tu carro!"
-            />
-          </label>
-          
-          <label className="block">
-            <span className="block font-medium">Example Translation</span>
-            <textarea
-              name="exampleTranslation"
-              className="w-full rounded border p-2"
-              rows={2}
-              placeholder="e.g. Your car is so cool!"
-            />
-          </label>
-        </>
-      )}
-      
-      {isExistingDefinition && (
-        <label className="block">
-          <span className="block font-medium">Example Translation</span>
-          <textarea
-            name="exampleTranslation"
-            className="w-full rounded border p-2"
-            rows={2}
-            placeholder="e.g. Your car is so cool!"
-          />
-        </label>
-      )}
-      
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="flex items-center justify-center gap-2 rounded bg-primary px-4 py-2 text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-      >
-        {isSubmitting && (
-          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-        )}
-        {isSubmitting ? "Submitting..." : "Submit"}
-      </button>
-      
-      <div className="text-center text-xs text-muted-foreground border-t pt-4 mt-6">
-        By submitting content, you agree to our{" "}
-        <a 
-          href="/terms" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="text-primary hover:underline"
-        >
-          Terms of Service
-        </a>
-        {" "}and confirm that you are at least 16 years old.
-      </div>
-      </form>
+            className="w-full flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-primary-foreground font-semibold shadow-card hover:shadow-card-hover hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all duration-[var(--duration-hover)] ease-[var(--ease-smooth)]"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-5 h-5" />
+                Submit
+              </>
+            )}
+          </button>
+
+          {/* Terms notice */}
+          <div className="text-center text-xs text-muted-foreground pt-4 border-t border-primary/10">
+            By submitting content, you agree to our{" "}
+            <a
+              href="/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              Terms of Service
+            </a>{" "}
+            and confirm that you are at least 16 years old.
+          </div>
+        </form>
       </div>
     </div>
   );

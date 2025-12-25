@@ -14,7 +14,21 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
+  pages: {
+    signIn: "/",
+  },
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      // After sign in, redirect to /home
+      if (url === baseUrl || url === `${baseUrl}/`) {
+        return `${baseUrl}/home`;
+      }
+      // Allow callback URLs on the same origin
+      if (url.startsWith(baseUrl)) {
+        return url;
+      }
+      return baseUrl;
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;

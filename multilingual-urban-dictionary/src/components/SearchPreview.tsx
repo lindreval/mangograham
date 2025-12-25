@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 interface SearchResult {
@@ -110,19 +110,21 @@ export default function SearchPreview({ defaultValue = "" }: SearchPreviewProps)
 
       {/* Search Preview Dropdown */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-md shadow-lg z-50 max-h-80 overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-1 rounded-xl border-2 border-primary/20 bg-card shadow-card-hover z-50 max-h-80 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
           {loading ? (
-            <div className="p-3 text-sm text-muted-foreground">
-              Searching...
+            <div className="flex items-center justify-center gap-2 p-4 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Searching...</span>
             </div>
           ) : results.length > 0 ? (
             <>
-              {results.map((result) => (
+              {results.map((result, index) => (
                 <Link
                   key={result.id}
                   href={`/${result.language.isoCode}/${result.slug}`}
                   onClick={() => handleResultClick(result)}
-                  className="block px-3 py-2 hover:bg-accent hover:text-accent-foreground border-b border-border/50 last:border-b-0"
+                  className="block px-3 py-2 hover:bg-primary/5 border-b border-primary/10 last:border-b-0 transition-all duration-200 animate-in fade-in slide-in-from-top-1"
+                  style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'backwards' }}
                 >
                   <div className="flex items-center justify-between">
                     <div>
@@ -145,15 +147,16 @@ export default function SearchPreview({ defaultValue = "" }: SearchPreviewProps)
                 <Link
                   href={`/search?q=${encodeURIComponent(query)}`}
                   onClick={() => setIsOpen(false)}
-                  className="block px-3 py-2 text-sm text-primary hover:bg-accent text-center border-t border-border"
+                  className="block px-3 py-2 text-sm text-primary font-medium hover:bg-primary/5 text-center border-t border-primary/20 transition-all duration-200"
                 >
                   View all results →
                 </Link>
               )}
             </>
           ) : query.trim().length >= 2 && !loading ? (
-            <div className="p-3 text-sm text-muted-foreground">
-              No results found for &ldquo;{query}&rdquo;
+            <div className="flex flex-col items-center justify-center gap-2 p-4 text-sm text-muted-foreground">
+              <Search className="h-5 w-5 text-muted-foreground/50" />
+              <span>No results found for &ldquo;{query}&rdquo;</span>
             </div>
           ) : null}
         </div>

@@ -57,6 +57,7 @@ import { maragsaDisplay } from "@/lib/fonts";
 import "./globals.css";
 import Providers from "./providers";
 import { ConditionalNavBar } from "@/components/ConditionalNavBar";
+import { ConditionalFooter } from "@/components/ConditionalFooter";
 import { Toaster } from "@/components/ui/toaster";
 import { Suspense } from "react";
 import { Analytics } from "@vercel/analytics/next";
@@ -133,14 +134,15 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://lh3.googleusercontent.com" />
       </head>
       {/* ② Apply the GeistSans variable via Tailwind's font-sans utility */}
-      <body className="min-h-screen font-sans antialiased">
+      <body className="min-h-screen font-sans antialiased flex flex-col">
         <Analytics />
         <Providers>
           {/* ③ Wrap your client-only NavBar in Suspense */}
           <Suspense fallback={null}>
             <ConditionalNavBar />
           </Suspense>
-          {children}
+          <div className="flex-1">{children}</div>
+          <ConditionalFooter />
           <DeferredAchievementLoader />
           <Toaster />
         </Providers>

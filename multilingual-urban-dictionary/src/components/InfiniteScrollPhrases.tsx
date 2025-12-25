@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef, memo } from "react";
 import PhraseCard, { PhraseWithLang } from "./PhraseCard";
+import StaggeredList from "./ui/staggered-list";
 
 // Memoized PhraseCard wrapper to prevent unnecessary re-renders
 const MemoizedPhraseCard = memo(PhraseCard);
@@ -133,23 +134,25 @@ export default function InfiniteScrollPhrases({ initialPhrases }: InfiniteScroll
 
   return (
     <section className="flex-1">
-      {phrases.map((phrase) => (
-        <div key={phrase.id} className="mb-6 transition-transform duration-300 hover:scale-102">
-          <MemoizedPhraseCard phrase={phrase} />
-        </div>
-      ))}
+      <StaggeredList className="space-y-6" staggerDelay={60} animationDuration={400}>
+        {phrases.map((phrase) => (
+          <div key={phrase.id} className="transition-transform duration-300 hover:scale-[1.01]">
+            <MemoizedPhraseCard phrase={phrase} />
+          </div>
+        ))}
+      </StaggeredList>
 
       {/* Sentinel element for IntersectionObserver */}
       <div ref={sentinelRef} className="h-1" />
 
       {loading && (
         <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       )}
 
       {!hasMore && phrases.length > 0 && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-muted-foreground">
           You made it to the bottom!
         </div>
       )}

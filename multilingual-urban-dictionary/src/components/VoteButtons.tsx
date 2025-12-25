@@ -81,10 +81,10 @@ export default function VoteButtons({
         disabled={isPending}
         onClick={() => handleVote(1)}
         className={`
-          disabled:opacity-50 p-1 rounded transition-colors
-          ${optimisticVote.userVote === 1 
-            ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-            : 'hover:bg-gray-100'
+          disabled:opacity-50 p-1 rounded transition-all duration-200 hover:scale-110 active:scale-95
+          ${optimisticVote.userVote === 1
+            ? 'bg-primary/15 text-primary'
+            : 'hover:bg-primary/10 hover:text-primary'
           }
         `}
         title={optimisticVote.userVote === 1 ? "Remove upvote" : "Upvote"}
@@ -96,10 +96,10 @@ export default function VoteButtons({
         disabled={isPending}
         onClick={() => handleVote(-1)}
         className={`
-          disabled:opacity-50 p-1 rounded transition-colors
-          ${optimisticVote.userVote === -1 
-            ? 'bg-red-100 text-red-700 hover:bg-red-200' 
-            : 'hover:bg-gray-100'
+          disabled:opacity-50 p-1 rounded transition-all duration-200 hover:scale-110 active:scale-95
+          ${optimisticVote.userVote === -1
+            ? 'bg-destructive/15 text-destructive'
+            : 'hover:bg-destructive/10 hover:text-destructive'
           }
         `}
         title={optimisticVote.userVote === -1 ? "Remove downvote" : "Downvote"}

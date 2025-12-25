@@ -3,15 +3,21 @@ import { authConfig } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Image from "next/image";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { CalendarDays, Trophy, TrendingUp } from "lucide-react";
+import {
+  CalendarDays,
+  Trophy,
+  TrendingUp,
+  Sparkles,
+  User,
+} from "lucide-react";
 import EditProfileModal from "@/components/EditProfileModal";
 import InfiniteSortableContributions from "@/components/InfiniteSortableContributions";
 import { calculateUserReputation, getReputationLevel } from "@/lib/reputation";
 import ReputationInfo from "@/components/ReputationInfo";
 import { AchievementService } from "@/lib/achievements";
 import { CompletedAchievementsRow } from "@/components/achievements/AchievementsGrid";
+import { PageHeader, PageBadge } from "@/components/ui/page-header";
+import { ProfileStatsGrid } from "@/components/profile/ProfileStatsGrid";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -21,7 +27,7 @@ export const metadata: Metadata = {
 
 export default async function ProfilePage() {
   const session = await getServerSession(authConfig);
-  
+
   if (!session?.user) {
     redirect("/");
   }
@@ -29,7 +35,6 @@ export default async function ProfilePage() {
   const userId = session.user.id;
 
   // Get user data with their contributions, counts, and achievements in parallel
-  // Use count queries instead of fetching all data for stats
   const [userData, counts, voteStats, userAchievements] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
@@ -39,25 +44,25 @@ export default async function ProfilePage() {
             language: true,
             definitions: {
               include: {
-                votes: true
-              }
-            }
+                votes: true,
+              },
+            },
           },
           orderBy: { createdAt: "desc" },
-          take: 10
+          take: 10,
         },
         definitions: {
           include: {
             phrase: {
               include: {
-                language: true
-              }
+                language: true,
+              },
             },
             votes: true,
-            examples: true
+            examples: true,
           },
           orderBy: { createdAt: "desc" },
-          take: 10
+          take: 10,
         },
         examples: {
           include: {
@@ -65,25 +70,23 @@ export default async function ProfilePage() {
               include: {
                 phrase: {
                   include: {
-                    language: true
-                  }
-                }
-              }
+                    language: true,
+                  },
+                },
+              },
             },
-            votes: true
+            votes: true,
           },
           orderBy: { createdAt: "desc" },
-          take: 10
-        }
-      }
+          take: 10,
+        },
+      },
     }),
-    // Get counts efficiently using count queries (not fetching all data)
     Promise.all([
       prisma.phrase.count({ where: { authorId: userId } }),
       prisma.definition.count({ where: { authorId: userId } }),
-      prisma.example.count({ where: { authorId: userId } })
+      prisma.example.count({ where: { authorId: userId } }),
     ]),
-    // Get total vote scores using aggregation
     prisma.$queryRaw<{ def_score: bigint; ex_score: bigint }[]>`
       SELECT
         COALESCE((
@@ -99,11 +102,10 @@ export default async function ProfilePage() {
           WHERE e."authorId" = ${userId}
         ), 0) as ex_score
     `,
-    // Get user achievements (with initialization)
     (async () => {
       await AchievementService.ensureUserInitialized(userId);
       return AchievementService.getUserAchievements(userId);
-    })()
+    })(),
   ]);
 
   const [phraseCount, definitionCount, exampleCount] = counts;
@@ -112,173 +114,175 @@ export default async function ProfilePage() {
     redirect("/");
   }
 
-  // Debug: Log achievement data in development
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Profile Debug:', {
-      userId,
-      userAchievementsCount: userAchievements.length,
-      completedCount: userAchievements.filter(ua => ua.isCompleted).length
-    });
-  }
-
-  // Calculate stats from optimized queries
   const definitionVoteScore = Number(voteStats[0]?.def_score ?? 0);
   const exampleVoteScore = Number(voteStats[0]?.ex_score ?? 0);
 
   const totalUpvotes = definitionVoteScore + exampleVoteScore;
   const totalContributions = phraseCount + definitionCount + exampleCount;
 
-  // Calculate actual reputation
   const reputationData = await calculateUserReputation(userId);
   const reputationLevel = getReputationLevel(reputationData.totalReputation);
 
-  // Update user's reputation in database
   await prisma.user.update({
     where: { id: userId },
     data: { reputation: reputationData.totalReputation },
   });
+
   const joinDate = userData.createdAt;
+  const completedAchievements = userAchievements.filter((ua) => ua.isCompleted);
 
   return (
     <main className="mx-auto max-w-6xl p-4 md:p-6 space-y-6 md:space-y-8">
-      {/* Enhanced User Info Section */}
-      <Card className="border-4 shadow-elevation-medium">
-        <CardContent className="pt-4 md:pt-6">
-          <div className="flex flex-col sm:flex-row items-start gap-4 md:gap-6">
+      <PageHeader
+        title="Your Profile"
+        subtitle="Track your contributions and reputation"
+        badge={
+          <PageBadge>
+            <User className="w-3 h-3 mr-1.5" />
+            Personal Dashboard
+          </PageBadge>
+        }
+        action={
+          <EditProfileModal
+            user={{
+              name: userData.name,
+              username: userData.username,
+              bio: userData.bio,
+              location: userData.location,
+              languagesSpoken: userData.languagesSpoken,
+            }}
+          />
+        }
+      />
+
+      {/* Profile Card */}
+      <div className="rounded-xl border-2 border-primary/20 bg-card shadow-card overflow-hidden animate-page-enter relative">
+        {/* Subtle gradient background pattern */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] via-transparent to-primary/[0.04] pointer-events-none" />
+        <div className="absolute top-0 right-0 w-48 h-48 bg-primary/[0.03] rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" />
+
+        <div className="h-1 bg-gradient-to-r from-primary via-primary to-primary/60" />
+        <div className="p-6 md:p-8 relative">
+          <div className="flex flex-col sm:flex-row items-start gap-6">
             {userData.image && (
-              <Image 
-                src={userData.image} 
-                alt={userData.name || "User avatar"} 
-                width={80}
-                height={80}
-                className="w-16 h-16 md:w-20 md:h-20 rounded-full border-2 border-primary/20 mx-auto sm:mx-0"
-              />
+              <div className="relative mx-auto sm:mx-0 group">
+                {/* Decorative glow ring */}
+                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/40 via-primary/20 to-primary/40 blur-md scale-110 opacity-60 group-hover:opacity-80 transition-opacity duration-300" />
+                <div className="absolute inset-0 rounded-full ring-2 ring-primary/30 ring-offset-2 ring-offset-card scale-[1.15]" />
+                <Image
+                  src={userData.image}
+                  alt={userData.name || "User avatar"}
+                  width={96}
+                  height={96}
+                  className="relative w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-primary/20 shadow-card transition-transform duration-300 group-hover:scale-105"
+                />
+                <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg">
+                  <Trophy className="w-4 h-4" />
+                </div>
+              </div>
             )}
             <div className="flex-1 w-full text-center sm:text-left">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 gap-2">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                  <h1 className="text-2xl md:text-3xl font-bold">{userData.name || "Anonymous User"}</h1>
-                  <Badge className={`${reputationLevel.color} text-white self-center sm:self-auto`}>
-                    <Trophy className="w-3 h-3 mr-1" />
-                    {reputationLevel.level}
-                  </Badge>
-                </div>
-                <div className="self-center sm:self-auto">
-                  <EditProfileModal user={{
-                    name: userData.name,
-                    username: userData.username,
-                    bio: userData.bio,
-                    location: userData.location,
-                    languagesSpoken: userData.languagesSpoken
-                  }} />
-                </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+                  {userData.name || "Anonymous User"}
+                </h2>
+                <span
+                  className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold text-white self-center sm:self-auto ${reputationLevel.color}`}
+                >
+                  <Trophy className="w-3 h-3 mr-1" />
+                  {reputationLevel.level}
+                </span>
               </div>
-              
+
               {userData.username && (
-                <p className="text-lg text-muted-foreground mb-1">@{userData.username}</p>
+                <p className="text-lg text-muted-foreground mb-2">
+                  @{userData.username}
+                </p>
               )}
-              
+
               {userData.bio && (
-                <p className="text-muted-foreground mb-3">{userData.bio}</p>
+                <p className="text-card-foreground/80 mb-4 max-w-xl">
+                  {userData.bio}
+                </p>
               )}
-              
-              <div className="flex flex-wrap justify-center sm:justify-start gap-3 md:gap-4 text-xs md:text-sm text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <CalendarDays className="w-4 h-4" />
+
+              <div className="flex flex-wrap justify-center sm:justify-start gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1.5">
+                  <CalendarDays className="w-4 h-4 text-primary" />
                   Joined {joinDate.toLocaleDateString()}
                 </div>
-                
+
                 {userData.location && (
-                  <div>📍 {userData.location}</div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-primary">📍</span>
+                    {userData.location}
+                  </div>
                 )}
-                
+
                 {userData.languagesSpoken.length > 0 && (
-                  <div>🗣️ {userData.languagesSpoken.join(", ")}</div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-primary">🗣️</span>
+                    {userData.languagesSpoken.join(", ")}
+                  </div>
                 )}
-                
-                <div className="flex items-center gap-1">
-                  <TrendingUp className="w-4 h-4" />
-                  <ReputationInfo reputationData={reputationData} reputationLevel={reputationLevel} />
+
+                <div className="flex items-center gap-1.5">
+                  <TrendingUp className="w-4 h-4 text-primary" />
+                  <ReputationInfo
+                    reputationData={reputationData}
+                    reputationLevel={reputationLevel}
+                  />
                 </div>
               </div>
 
-              {/* Recent Achievements */}
-              <div className="mt-4 pt-4 border-t">
-                <div className="text-sm font-medium text-muted-foreground mb-2">
-                  Achievements ({userAchievements.length} total, {userAchievements.filter(ua => ua.isCompleted).length} completed)
+              {/* Achievements Section */}
+              {userAchievements.length > 0 && (
+                <div className="mt-6 pt-6 border-t border-primary/10">
+                  <div className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    Achievements ({completedAchievements.length}/
+                    {userAchievements.length})
+                  </div>
+                  {completedAchievements.length > 0 ? (
+                    <CompletedAchievementsRow
+                      userAchievements={userAchievements}
+                      maxDisplay={6}
+                    />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No achievements completed yet. Start contributing to
+                      unlock them!
+                    </p>
+                  )}
                 </div>
-                {userAchievements.filter(ua => ua.isCompleted).length > 0 ? (
-                  <CompletedAchievementsRow 
-                    userAchievements={userAchievements}
-                    maxDisplay={6}
-                  />
-                ) : (
-                  <div className="text-sm text-muted-foreground">
-                    No achievements completed yet. Start by creating definitions or voting on content!
-                  </div>
-                )}
-                {/* Debug info */}
-                {process.env.NODE_ENV === 'development' && (
-                  <div className="mt-2 text-xs text-gray-400">
-                    Debug: {userAchievements.length} achievements loaded
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Enhanced Stats Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
-        <Card className="border-4 shadow-elevation-medium">
-          <CardContent className="pt-4 md:pt-6 text-center">
-            <div className="text-xl md:text-2xl font-bold text-primary">{phraseCount}</div>
-            <div className="text-xs md:text-sm text-muted-foreground">Phrases Submitted</div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-4 shadow-elevation-medium">
-          <CardContent className="pt-4 md:pt-6 text-center">
-            <div className="text-xl md:text-2xl font-bold text-primary">{definitionCount}</div>
-            <div className="text-xs md:text-sm text-muted-foreground">Definitions Added</div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-4 shadow-elevation-medium">
-          <CardContent className="pt-4 md:pt-6 text-center">
-            <div className="text-xl md:text-2xl font-bold text-primary">{exampleCount}</div>
-            <div className="text-xs md:text-sm text-muted-foreground">Examples Contributed</div>
-          </CardContent>
-        </Card>
-        
-        <Card className="border-4 shadow-elevation-medium">
-          <CardContent className="pt-4 md:pt-6 text-center">
-            <div className="text-xl md:text-2xl font-bold text-green-600">{totalUpvotes}</div>
-            <div className="text-xs md:text-sm text-muted-foreground">Total Upvotes</div>
-          </CardContent>
-        </Card>
-        
-        <Card className="border-4 shadow-elevation-medium">
-          <CardContent className="pt-4 md:pt-6 text-center">
-            <div className="text-xl md:text-2xl font-bold text-purple-600">{totalContributions}</div>
-            <div className="text-xs md:text-sm text-muted-foreground">Total Contributions</div>
-          </CardContent>
-        </Card>
+        </div>
       </div>
 
-
-      {/* Infinite Sortable Contributions Section */}
-      <InfiniteSortableContributions
-        initialPhrases={userData.phrases}
-        initialDefinitions={userData.definitions}
-        initialExamples={userData.examples}
-        totalCounts={{
-          phrases: phraseCount,
-          definitions: definitionCount,
-          examples: exampleCount
-        }}
+      {/* Stats Grid */}
+      <ProfileStatsGrid
+        phraseCount={phraseCount}
+        definitionCount={definitionCount}
+        exampleCount={exampleCount}
+        totalUpvotes={totalUpvotes}
+        totalContributions={totalContributions}
       />
+
+      {/* Contributions Section */}
+      <div className="animate-page-enter" style={{ animationDelay: "0.4s" }}>
+        <InfiniteSortableContributions
+          initialPhrases={userData.phrases}
+          initialDefinitions={userData.definitions}
+          initialExamples={userData.examples}
+          totalCounts={{
+            phrases: phraseCount,
+            definitions: definitionCount,
+            examples: exampleCount,
+          }}
+        />
+      </div>
     </main>
   );
 }
