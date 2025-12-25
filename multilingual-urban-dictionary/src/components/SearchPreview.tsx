@@ -153,7 +153,7 @@ export default function SearchPreview({ defaultValue = "" }: SearchPreviewProps)
             type="submit"
             size="sm"
             variant="ghost"
-            className="absolute right-1 h-6 w-6 md:h-8 md:w-8 p-0 hover:bg-muted"
+            className="absolute right-1 h-6 w-6 md:h-8 md:w-8 p-0 hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0"
           >
             <Search className="h-3 w-3 md:h-4 md:w-4" />
             <span className="sr-only">Search</span>

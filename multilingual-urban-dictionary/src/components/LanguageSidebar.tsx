@@ -28,7 +28,9 @@ export default function LanguageSidebar({ languages }: Props) {
 
           <button
             onClick={() => setIsMobileExpanded(!isMobileExpanded)}
-            className="w-full flex items-center justify-between p-3 text-left font-semibold relative z-10 transition-all duration-300 hover:bg-primary/5"
+            className="w-full flex items-center justify-between p-3 text-left font-semibold relative z-10 transition-all duration-300 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-t-xl"
+            aria-expanded={isMobileExpanded}
+            aria-controls="mobile-language-list"
           >
             <div className="flex items-center gap-2">
               <Globe className="w-4 h-4 text-primary" />
@@ -50,7 +52,7 @@ export default function LanguageSidebar({ languages }: Props) {
           }`}>
             <div className="border-t border-primary/20 bg-gradient-to-b from-primary/5 to-transparent">
               <div className="max-h-[500px] overflow-y-auto px-3 pb-3 scrollbar-thin">
-                <ul className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm mt-2">
+                <ul id="mobile-language-list" className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm mt-2">
                 {languages.map((lang, index) => (
                   <li
                     key={lang.id}
@@ -61,7 +63,7 @@ export default function LanguageSidebar({ languages }: Props) {
                   >
                     <Link
                       href={`/${lang.isoCode}`}
-                      className="block py-1.5 px-2 rounded-md hover:bg-primary/10 hover:text-primary transition-all duration-300 hover:translate-x-1 relative overflow-hidden group/link"
+                      className="block py-1.5 px-2 rounded-md hover:bg-primary/10 hover:text-primary transition-all duration-300 hover:translate-x-1 relative overflow-hidden group/link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
                       onClick={() => setIsMobileExpanded(false)}
                     >
                       <span className="relative z-10">{lang.name}</span>
@@ -89,7 +91,9 @@ export default function LanguageSidebar({ languages }: Props) {
 
           <button
             onClick={() => setIsDesktopExpanded(!isDesktopExpanded)}
-            className="w-full flex items-center justify-between p-4 text-left relative z-10 transition-all duration-300 hover:bg-primary/5"
+            className="w-full flex items-center justify-between p-4 text-left relative z-10 transition-all duration-300 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-t-xl"
+            aria-expanded={isDesktopExpanded}
+            aria-controls="desktop-language-list"
           >
             <div className="flex items-center gap-2">
               <Globe className="w-4 h-4 text-primary" />
@@ -111,7 +115,7 @@ export default function LanguageSidebar({ languages }: Props) {
           }`}>
             <div className="border-t border-primary/20 bg-gradient-to-b from-primary/5 to-transparent">
               <div className="max-h-[500px] overflow-y-auto px-4 pb-4 scrollbar-thin">
-                <ul className="space-y-0.5 text-sm mt-2">
+                <ul id="desktop-language-list" className="space-y-0.5 text-sm mt-2">
                 {languages.map((lang, index) => (
                   <li
                     key={lang.id}
@@ -122,7 +126,7 @@ export default function LanguageSidebar({ languages }: Props) {
                   >
                     <Link
                       href={`/${lang.isoCode}`}
-                      className="block py-1.5 px-2 rounded-md hover:bg-primary/10 hover:text-primary transition-all duration-300 hover:translate-x-1 relative overflow-hidden group/link"
+                      className="block py-1.5 px-2 rounded-md hover:bg-primary/10 hover:text-primary transition-all duration-300 hover:translate-x-1 relative overflow-hidden group/link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
                     >
                       <span className="relative z-10">{lang.name}</span>
                       <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 translate-x-[-100%] group-hover/link:translate-x-[100%] transition-transform duration-700"></div>

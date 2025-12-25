@@ -105,6 +105,7 @@ export default function PhraseCard({ phrase }: { phrase: PhraseWithLang }) {
 
         {/* Hero Title */}
         <h2
+          lang={phrase.language.isoCode}
           className={`
             text-3xl md:text-4xl font-black text-foreground mb-2
             tracking-tighter leading-[1.1]
@@ -115,7 +116,7 @@ export default function PhraseCard({ phrase }: { phrase: PhraseWithLang }) {
         >
           {phrase.textOriginal}
           {phrase.transliteration && (
-            <span className="block mt-1.5 text-base md:text-lg text-muted-foreground/70 font-medium italic tracking-wide">
+            <span lang="und" className="block mt-1.5 text-base md:text-lg text-muted-foreground/70 font-medium italic tracking-wide">
               /{phrase.transliteration}/
             </span>
           )}
@@ -146,13 +147,13 @@ export default function PhraseCard({ phrase }: { phrase: PhraseWithLang }) {
                 </span>
 
                 <div className="border-l-2 border-primary/30 pl-4 py-1">
-                  <p className="text-sm italic text-card-foreground/70 leading-relaxed whitespace-pre-wrap">
+                  <p lang={phrase.language.isoCode} className="text-sm italic text-card-foreground/70 leading-relaxed whitespace-pre-wrap">
                     {topExample.text.length > 90
                       ? `${topExample.text.substring(0, 90)}...`
                       : topExample.text}
                   </p>
                   {topExample.translation && (
-                    <p className="text-xs text-card-foreground/50 mt-1.5 not-italic whitespace-pre-wrap">
+                    <p lang="en" className="text-xs text-card-foreground/50 mt-1.5 not-italic whitespace-pre-wrap">
                       {topExample.translation.length > 80
                         ? `${topExample.translation.substring(0, 80)}...`
                         : topExample.translation}

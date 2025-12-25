@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Suspense } from "react";
 import { Analytics } from "@vercel/analytics/next";
 import { DeferredAchievementLoader } from "@/components/achievements/DeferredAchievementLoader";
+import { auth } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: {
@@ -64,11 +65,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await auth();
+
   return (
     // ① Attach the CSS variables for Geist fonts to <html>
     <html
@@ -90,7 +93,7 @@ export default function RootLayout({
           Skip to main content
         </a>
         <Analytics />
-        <Providers>
+        <Providers session={session}>
           {/* ③ Wrap your client-only NavBar in Suspense */}
           <Suspense fallback={null}>
             <ConditionalNavBar />

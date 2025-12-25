@@ -54,7 +54,7 @@ export default function AuthButton() {
           <Button
             variant="ghost"
             size="sm"
-            className="border-1 text-sm ring-2 ring-primary/20 ring-offset-2 hover:scale-105 transition-transform"
+            className="border-1 text-sm ring-2 ring-primary/20 ring-offset-2 hover:scale-105 transition-transform focus-visible:ring-primary focus-visible:ring-offset-background"
           >
             Hi {session.user?.name?.split(" ")[0] ?? "friend"}
           </Button>
@@ -90,7 +90,7 @@ export default function AuthButton() {
         <Button
           variant="ghost"
           size="icon"
-          className="hover:scale-105 transition-transform"
+          className="hover:scale-105 transition-transform focus-visible:ring-2 focus-visible:ring-primary"
         >
           <Menu className="h-5 w-5" />
           <span className="sr-only">Open menu</span>

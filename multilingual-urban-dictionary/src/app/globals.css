@@ -287,3 +287,33 @@
 .stagger-children > *:nth-child(8) { animation-delay: 0.45s; }
 .stagger-children > *:nth-child(9) { animation-delay: 0.5s; }
 .stagger-children > *:nth-child(10) { animation-delay: 0.55s; }
+
+/* Reduced Motion Support - Accessibility */
+/* Global focus-visible enhancement for better keyboard navigation visibility */
+*:focus-visible {
+  outline: 2px solid oklch(0.4228 0.1001 147.05) !important;
+  outline-offset: 2px !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-scale-up,
+  .animate-page-enter,
+  .animate-slide-up-fade,
+  .animate-shimmer,
+  .animate-float {
+    animation: none;
+  }
+
+  .stagger-children > * {
+    animation-delay: 0ms;
+  }
+}

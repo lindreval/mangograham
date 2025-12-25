@@ -20,7 +20,7 @@ export default function NavBar() {
           {/* Site logo / brand */}
           <Link
             href="/"
-            className="navbar-logo flex items-center gap-1 md:gap-2 font-semibold shrink-0 group"
+            className="navbar-logo flex items-center gap-1 md:gap-2 font-semibold shrink-0 group rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             <div className="relative">
               <Image

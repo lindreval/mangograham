@@ -52,20 +52,11 @@ export default async function UserProfilePage({
   const { username } = await params;
   const session = await getServerSession(authConfig);
 
-  const userLookup = await prisma.user.findUnique({
-    where: { username: username },
-    select: { id: true },
-  });
-
-  if (!userLookup) {
-    notFound();
-  }
-
-  const userId = userLookup.id;
-
+  // Combined query - removed redundant initial lookup
+  // Query directly by username instead of id
   const [userData, counts, voteStats, userAchievements] = await Promise.all([
     prisma.user.findUnique({
-      where: { id: userId },
+      where: { username },
       include: {
         phrases: {
           include: {
@@ -110,37 +101,54 @@ export default async function UserProfilePage({
         },
       },
     }),
-    Promise.all([
-      prisma.phrase.count({ where: { authorId: userId } }),
-      prisma.definition.count({ where: { authorId: userId } }),
-      prisma.example.count({ where: { authorId: userId } }),
-    ]),
+    // Get counts using _count instead of separate queries
+    prisma.user
+      .findUnique({
+        where: { username },
+        select: {
+          _count: {
+            select: { phrases: true, definitions: true, examples: true },
+          },
+        },
+      })
+      .then((user) =>
+        user
+          ? [user._count.phrases, user._count.definitions, user._count.examples]
+          : [0, 0, 0]
+      ),
+    // Use username in raw query to avoid extra lookup
     prisma.$queryRaw<{ def_score: bigint; ex_score: bigint }[]>`
       SELECT
         COALESCE((
           SELECT SUM(dv.value)
           FROM "Definition" d
           JOIN "DefinitionVote" dv ON d.id = dv."definitionId"
-          WHERE d."authorId" = ${userId}
+          WHERE d."authorId" = (SELECT id FROM "User" WHERE username = ${username})
         ), 0) as def_score,
         COALESCE((
           SELECT SUM(ev.value)
           FROM "Example" e
           JOIN "ExampleVote" ev ON e.id = ev."exampleId"
-          WHERE e."authorId" = ${userId}
+          WHERE e."authorId" = (SELECT id FROM "User" WHERE username = ${username})
         ), 0) as ex_score
     `,
+    // Initialize achievements using username lookup
     (async () => {
-      await AchievementService.ensureUserInitialized(userId);
-      return AchievementService.getUserAchievements(userId);
+      const user = await prisma.user.findUnique({
+        where: { username },
+        select: { id: true },
+      });
+      if (!user) return [];
+      await AchievementService.ensureUserInitialized(user.id);
+      return AchievementService.getUserAchievements(user.id);
     })(),
   ]);
-
-  const [phraseCount, definitionCount, exampleCount] = counts;
 
   if (!userData) {
     notFound();
   }
+
+  const [phraseCount, definitionCount, exampleCount] = counts;
 
   const definitionVoteScore = Number(voteStats[0]?.def_score ?? 0);
   const exampleVoteScore = Number(voteStats[0]?.ex_score ?? 0);

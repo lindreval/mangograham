@@ -103,7 +103,11 @@ export default function FeedbackForm() {
           <div className="space-y-2">
             <Label htmlFor="type">Feedback Type</Label>
             <Select value={formData.type} onValueChange={(value) => handleInputChange("type", value)}>
-              <SelectTrigger className="rounded-lg transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20">
+              <SelectTrigger
+                className="rounded-lg transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                aria-describedby={errors.type ? "type-error" : undefined}
+                aria-invalid={!!errors.type}
+              >
                 <SelectValue placeholder="Select feedback type" />
               </SelectTrigger>
               <SelectContent>
@@ -114,7 +118,7 @@ export default function FeedbackForm() {
                 ))}
               </SelectContent>
             </Select>
-            {errors.type && <p className="text-sm text-destructive">{errors.type}</p>}
+            {errors.type && <p id="type-error" className="text-sm text-destructive" role="alert">{errors.type}</p>}
           </div>
 
           <div className="space-y-2">
@@ -125,8 +129,10 @@ export default function FeedbackForm() {
               onChange={(e) => handleInputChange("subject", e.target.value)}
               placeholder="Brief description of your feedback"
               className="rounded-lg transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+              aria-describedby={errors.subject ? "subject-error" : undefined}
+              aria-invalid={!!errors.subject}
             />
-            {errors.subject && <p className="text-sm text-destructive">{errors.subject}</p>}
+            {errors.subject && <p id="subject-error" className="text-sm text-destructive" role="alert">{errors.subject}</p>}
           </div>
 
           <div className="space-y-2">
@@ -138,8 +144,10 @@ export default function FeedbackForm() {
               placeholder="Please provide detailed feedback..."
               rows={5}
               className="rounded-lg transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+              aria-describedby={errors.message ? "message-error" : undefined}
+              aria-invalid={!!errors.message}
             />
-            {errors.message && <p className="text-sm text-destructive">{errors.message}</p>}
+            {errors.message && <p id="message-error" className="text-sm text-destructive" role="alert">{errors.message}</p>}
           </div>
 
           {!session?.user?.email && (
@@ -152,8 +160,10 @@ export default function FeedbackForm() {
                 onChange={(e) => handleInputChange("email", e.target.value)}
                 placeholder="your.email@example.com"
                 className="rounded-lg transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                aria-describedby={errors.email ? "email-error" : undefined}
+                aria-invalid={!!errors.email}
               />
-              {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+              {errors.email && <p id="email-error" className="text-sm text-destructive" role="alert">{errors.email}</p>}
             </div>
           )}
 
