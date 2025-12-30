@@ -11,6 +11,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { DeferredAchievementLoader } from "@/components/achievements/DeferredAchievementLoader";
 import { auth } from "@/lib/auth";
 import { SkipLink } from "@/components/SkipLink";
+import Script from "next/script";
 
 export const metadata: Metadata = {
   title: {
@@ -83,6 +84,15 @@ export default async function RootLayout({
         {/* Preconnect to Google's image CDN for faster avatar loading */}
         <link rel="preconnect" href="https://lh3.googleusercontent.com" />
         <link rel="dns-prefetch" href="https://lh3.googleusercontent.com" />
+
+        {/* Google AdSense */}
+        <Script
+          id="adsense"
+          strategy="lazyOnload"
+          async
+          crossOrigin="anonymous"
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8663102741287690"
+        />
       </head>
       {/* ② Apply the GeistSans variable via Tailwind's font-sans utility */}
       <body className="min-h-screen font-sans antialiased flex flex-col">
@@ -93,7 +103,19 @@ export default async function RootLayout({
           <Suspense fallback={null}>
             <ConditionalNavBar />
           </Suspense>
+          {/* Header Ad - Replace with your actual ad slot ID */}
+          {/* <AdsBanner 
+            data-ad-slot="YOUR_HEADER_AD_SLOT_ID"
+            data-ad-format="auto"
+            data-full-width-responsive="true"
+          /> */}
           <main id="main-content" className="flex-1">{children}</main>
+          {/* Footer Ad - Replace with your actual ad slot ID */}
+          {/* <AdsBanner 
+            data-ad-slot="YOUR_FOOTER_AD_SLOT_ID"
+            data-ad-format="auto"
+            data-full-width-responsive="true"
+          /> */}
           <ConditionalFooter />
           <DeferredAchievementLoader />
           <Toaster />
