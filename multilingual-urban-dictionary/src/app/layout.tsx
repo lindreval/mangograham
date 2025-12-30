@@ -86,13 +86,11 @@ export default async function RootLayout({
         <link rel="dns-prefetch" href="https://lh3.googleusercontent.com" />
 
         {/* Google AdSense */}
-        <Script
-          id="adsense"
-          strategy="afterInteractive"
-          async
-          crossOrigin="anonymous"
+        <script 
+          async 
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8663102741287690"
-        />
+          crossOrigin="anonymous"
+        ></script>
       </head>
       {/* ② Apply the GeistSans variable via Tailwind's font-sans utility */}
       <body className="min-h-screen font-sans antialiased flex flex-col">
