@@ -11,7 +11,6 @@ import { Analytics } from "@vercel/analytics/next";
 import { DeferredAchievementLoader } from "@/components/achievements/DeferredAchievementLoader";
 import { auth } from "@/lib/auth";
 import { SkipLink } from "@/components/SkipLink";
-import Script from "next/script";
 
 export const metadata: Metadata = {
   title: {
