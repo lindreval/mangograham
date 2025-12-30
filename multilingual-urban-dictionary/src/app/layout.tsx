@@ -88,7 +88,7 @@ export default async function RootLayout({
         {/* Google AdSense */}
         <Script
           id="adsense"
-          strategy="lazyOnload"
+          strategy="afterInteractive"
           async
           crossOrigin="anonymous"
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8663102741287690"
