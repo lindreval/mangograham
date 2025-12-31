@@ -5,7 +5,7 @@ import { Globe, MessageSquare, BookOpen, FileText, Shield } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="bg-card border-t-2 border-primary/20 mt-auto">
+    <footer className="bg-card border-t-2 border-primary/20 mt-32 md:mt-48">
       {/* Gradient accent bar */}
       <div className="h-1 bg-gradient-to-r from-primary via-primary to-primary/60" />
 
