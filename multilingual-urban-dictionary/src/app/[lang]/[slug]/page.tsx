@@ -7,6 +7,8 @@ import { authConfig } from "@/lib/auth";
 import Link from "next/link";
 import FlagButton from "@/components/FlagButton";
 import AdminEditButton from "@/components/AdminEditButton";
+import PhraseDetailsFAB from "@/components/PhraseDetailsFAB";
+import { Plus } from "lucide-react";
 
 // ISR: Revalidate phrase pages every hour
 export const revalidate = 3600;
@@ -162,7 +164,7 @@ export default async function PhrasePage({
           {/* Main Hero Card */}
           <div
             className="
-              rounded-[20px] border-4 border-primary bg-card text-card-foreground p-5 md:p-6
+              rounded-[20px] border-4 border-primary bg-card text-card-foreground p-4 md:p-5
               shadow-card relative overflow-hidden
                           "
           >
@@ -209,12 +211,13 @@ export default async function PhrasePage({
             )}
           </div>
 
-          {/* Actions Card */}
+          {/* Actions Card - Desktop Only */}
           <div
             className="
+              hidden lg:flex
               rounded-[16px] border-2 border-primary/30 bg-card/80 backdrop-blur-sm
               p-4 shadow-sm
-              flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3
+              flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3
             "
           >
             {/* Primary Action */}
@@ -268,7 +271,7 @@ export default async function PhrasePage({
                 <li
                   key={def.id}
                   className="
-                    rounded-[20px] border-4 border-primary bg-card text-card-foreground p-5 md:p-6
+                    rounded-[20px] border-4 border-primary bg-card text-card-foreground p-4 md:p-5
                     shadow-card relative overflow-hidden
                                       "
                 >
@@ -284,62 +287,69 @@ export default async function PhrasePage({
                     {def.body}
                   </p>
 
-                  {/* Author & Date */}
-                  <div className="mt-4 pt-3 relative z-10">
+                  {/* Author, Date & Voting */}
+                  <div className="mt-3 pt-2 md:mt-4 md:pt-3 relative z-10">
                     <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-foreground/10 to-transparent" />
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                      <span className="text-xs text-muted-foreground/60">
-                        <span className="text-muted-foreground/40 mr-1">by</span>
-                        {def.author.username ? (
-                          <Link
-                            href={`/user/${def.author.username}`}
-                            className="font-medium text-primary/80 hover:text-primary hover:underline transition-colors"
-                          >
-                            {def.author.name || def.author.email || "Anonymous"}
-                          </Link>
-                        ) : (
-                          <span className="font-medium text-muted-foreground/80">
-                            {def.author.name || def.author.email || "Anonymous"}
-                          </span>
-                        )}
-                      </span>
-                      <time
-                        dateTime={def.createdAt.toISOString()}
-                        className="text-[11px] text-muted-foreground/50 font-mono tabular-nums"
-                      >
-                        {def.createdAt.toLocaleDateString()}
-                      </time>
-                    </div>
-                  </div>
 
-                  {/* Voting & Flag */}
-                  <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 relative z-10">
-                    <div className="flex items-center gap-3">
-                      <VoteButtons
-                        score={defScore}
-                        type="definition"
-                        id={def.id}
-                        userVote={userVote?.value || null}
-                      />
-                      {/* Score Badge */}
-                      <span
-                        className={`
-                          inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold
-                          ${defScore >= 0 ? "bg-primary/15 text-primary" : "bg-destructive/15 text-destructive"}
-                        `}
-                      >
-                        <span className="text-[10px]">
-                          {defScore >= 0 ? "▲" : "▼"}
+                    {/* Mobile: Author + Votes on same row, Date below */}
+                    {/* Desktop: Maintain flexible layout */}
+                    <div className="flex flex-col gap-2">
+                      {/* First Row: Author + Vote Buttons */}
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs text-muted-foreground/60">
+                          <span className="text-muted-foreground/40 mr-1">by</span>
+                          {def.author.username ? (
+                            <Link
+                              href={`/user/${def.author.username}`}
+                              className="font-medium text-primary/80 hover:text-primary hover:underline transition-colors"
+                            >
+                              {def.author.name || def.author.email || "Anonymous"}
+                            </Link>
+                          ) : (
+                            <span className="font-medium text-muted-foreground/80">
+                              {def.author.name || def.author.email || "Anonymous"}
+                            </span>
+                          )}
                         </span>
-                        {Math.abs(defScore)}
-                      </span>
+
+                        {/* Vote Buttons + Score */}
+                        <div className="flex items-center gap-2">
+                          <VoteButtons
+                            score={defScore}
+                            type="definition"
+                            id={def.id}
+                            userVote={userVote?.value || null}
+                          />
+                          <span
+                            className={`
+                              inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold
+                              ${defScore >= 0 ? "bg-primary/15 text-primary" : "bg-destructive/15 text-destructive"}
+                            `}
+                          >
+                            <span className="text-[8px]">
+                              {defScore >= 0 ? "▲" : "▼"}
+                            </span>
+                            {Math.abs(defScore)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Second Row: Date + Flag */}
+                      <div className="flex items-center justify-between">
+                        <time
+                          dateTime={def.createdAt.toISOString()}
+                          className="text-[11px] text-muted-foreground/50 font-mono tabular-nums"
+                        >
+                          {def.createdAt.toLocaleDateString()}
+                        </time>
+                        <FlagButton definitionId={def.id} />
+                      </div>
                     </div>
-                    <FlagButton definitionId={def.id} />
                   </div>
 
                   {/* Examples Section */}
-                  <div className="mt-6 space-y-4 relative z-10">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div className="mt-4 md:mt-6 space-y-3 md:space-y-4 relative z-10">
+                    <div className="flex flex-row items-center justify-between gap-2">
                       <h4 className="text-sm font-bold text-card-foreground/80 uppercase tracking-wider">
                         Examples
                         {def.examples.length > 0 && (
@@ -352,19 +362,21 @@ export default async function PhrasePage({
                         <Link
                           href={`/submit?phrase=${encodeURIComponent(phrase.textOriginal)}&languageId=${phrase.languageId}&definition=${encodeURIComponent(def.body)}&definitionId=${def.id}`}
                           className="
-                            w-full sm:w-auto rounded-full bg-primary/10 border-2 border-primary/30
-                            px-4 py-1.5 text-xs text-primary font-bold text-center
+                            rounded-full bg-primary/10 border-2 border-primary/30
+                            px-2 py-1 sm:px-4 sm:py-1.5 text-[10px] sm:text-xs text-primary font-bold
                             hover:bg-primary hover:text-primary-foreground hover:border-primary
                             transition-all duration-200
+                            flex items-center gap-1 sm:gap-1.5 flex-shrink-0
                           "
                         >
-                          + Add Example
+                          <Plus className="h-3 w-3" />
+                          <span>Add Example</span>
                         </Link>
                       )}
                     </div>
 
                     {def.examples.length > 0 && (
-                      <div className="space-y-4">
+                      <div className="space-y-3 md:space-y-4">
                         {def.examples.map((ex) => {
                           const userExampleVote = userId
                             ? ex.votes.find((v) => v.userId === userId)
@@ -381,7 +393,7 @@ export default async function PhrasePage({
                             >
                               {/* Large decorative opening quote */}
                               <span
-                                className="absolute -left-1 -top-2 text-5xl text-primary/20 font-serif leading-none select-none"
+                                className="absolute -left-1 -top-2 text-4xl md:text-5xl text-primary/20 font-serif leading-none select-none"
                                 aria-hidden="true"
                               >
                                 &ldquo;
@@ -400,58 +412,63 @@ export default async function PhrasePage({
                                   </p>
                                 )}
 
-                                {/* Example Meta */}
-                                <div className="mt-3 pt-2 border-t border-foreground/5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                                  <div className="text-xs text-muted-foreground/60">
-                                    <span className="text-muted-foreground/40 mr-1">
-                                      by
-                                    </span>
-                                    {ex.author.username ? (
-                                      <Link
-                                        href={`/user/${ex.author.username}`}
-                                        className="font-medium text-primary/80 hover:text-primary hover:underline transition-colors"
+                                {/* Example Meta - Mobile: Keep on same row */}
+                                <div className="mt-3 pt-2 border-t border-foreground/5">
+                                  {/* Single row with author + votes */}
+                                  <div className="flex items-center justify-between gap-2">
+                                    {/* Author & Date - Compact for mobile */}
+                                    <div className="text-[11px] md:text-xs text-muted-foreground/60 flex-1 min-w-0">
+                                      <span className="text-muted-foreground/40 mr-1">
+                                        by
+                                      </span>
+                                      {ex.author.username ? (
+                                        <Link
+                                          href={`/user/${ex.author.username}`}
+                                          className="font-medium text-primary/80 hover:text-primary hover:underline transition-colors"
+                                        >
+                                          {ex.author.name ||
+                                            ex.author.email ||
+                                            "Anonymous"}
+                                        </Link>
+                                      ) : (
+                                        <span className="font-medium text-muted-foreground/80">
+                                          {ex.author.name ||
+                                            ex.author.email ||
+                                            "Anonymous"}
+                                        </span>
+                                      )}
+                                      <span className="mx-1 md:mx-2 text-muted-foreground/30">
+                                        •
+                                      </span>
+                                      <time
+                                        dateTime={ex.createdAt.toISOString()}
+                                        className="font-mono tabular-nums text-muted-foreground/50"
                                       >
-                                        {ex.author.name ||
-                                          ex.author.email ||
-                                          "Anonymous"}
-                                      </Link>
-                                    ) : (
-                                      <span className="font-medium text-muted-foreground/80">
-                                        {ex.author.name ||
-                                          ex.author.email ||
-                                          "Anonymous"}
-                                      </span>
-                                    )}
-                                    <span className="mx-2 text-muted-foreground/30">
-                                      •
-                                    </span>
-                                    <time
-                                      dateTime={ex.createdAt.toISOString()}
-                                      className="font-mono tabular-nums text-muted-foreground/50"
-                                    >
-                                      {ex.createdAt.toLocaleDateString()}
-                                    </time>
-                                  </div>
+                                        {ex.createdAt.toLocaleDateString()}
+                                      </time>
+                                    </div>
 
-                                  <div className="flex items-center gap-2">
-                                    <VoteButtons
-                                      score={exScore}
-                                      type="example"
-                                      id={ex.id}
-                                      userVote={userExampleVote?.value || null}
-                                    />
-                                    <span
-                                      className={`
-                                        inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold
-                                        ${exScore >= 0 ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"}
-                                      `}
-                                    >
-                                      <span className="text-[8px]">
-                                        {exScore >= 0 ? "▲" : "▼"}
+                                    {/* Vote Buttons + Score + Flag */}
+                                    <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
+                                      <VoteButtons
+                                        score={exScore}
+                                        type="example"
+                                        id={ex.id}
+                                        userVote={userExampleVote?.value || null}
+                                      />
+                                      <span
+                                        className={`
+                                          inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold
+                                          ${exScore >= 0 ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"}
+                                        `}
+                                      >
+                                        <span className="text-[8px]">
+                                          {exScore >= 0 ? "▲" : "▼"}
+                                        </span>
+                                        {Math.abs(exScore)}
                                       </span>
-                                      {Math.abs(exScore)}
-                                    </span>
-                                    <FlagButton exampleId={ex.id} />
+                                      <FlagButton exampleId={ex.id} />
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -471,7 +488,7 @@ export default async function PhrasePage({
         {phrase.tags && phrase.tags.length > 0 && (
           <div
             className="
-              rounded-[20px] border-4 border-primary bg-card text-card-foreground p-5 md:p-6
+              rounded-[20px] border-4 border-primary bg-card text-card-foreground p-4 md:p-5
               shadow-card relative overflow-hidden
                           "
           >
@@ -496,6 +513,12 @@ export default async function PhrasePage({
           </div>
         )}
       </main>
+
+      {/* Floating Action Button - Mobile Only */}
+      <PhraseDetailsFAB
+        phraseTitle={phrase.textOriginal}
+        languageId={phrase.languageId}
+      />
     </>
   );
 }
