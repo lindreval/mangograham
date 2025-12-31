@@ -11,7 +11,6 @@ import { Analytics } from "@vercel/analytics/next";
 import { DeferredAchievementLoader } from "@/components/achievements/DeferredAchievementLoader";
 import { auth } from "@/lib/auth";
 import { SkipLink } from "@/components/SkipLink";
-import Script from "next/script";
 
 export const metadata: Metadata = {
   title: {
@@ -86,13 +85,11 @@ export default async function RootLayout({
         <link rel="dns-prefetch" href="https://lh3.googleusercontent.com" />
 
         {/* Google AdSense */}
-        <Script
-          id="adsense"
-          strategy="lazyOnload"
-          async
-          crossOrigin="anonymous"
+        <script 
+          async 
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8663102741287690"
-        />
+          crossOrigin="anonymous"
+        ></script>
       </head>
       {/* ② Apply the GeistSans variable via Tailwind's font-sans utility */}
       <body className="min-h-screen font-sans antialiased flex flex-col">
