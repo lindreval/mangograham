@@ -11,14 +11,10 @@ export async function GET(request: NextRequest) {
     // Optimized query - don't load all votes, calculate scores separately
     const rawPhrases = await prisma.phrase.findMany({
       where: {
-        status: {
-          in: ["approved", "pending"],
-        },
+        status: "approved",
         definitions: {
           some: {
-            status: {
-              in: ["approved", "pending"],
-            },
+            status: "approved",
           },
         },
       },
@@ -36,9 +32,7 @@ export async function GET(request: NextRequest) {
         },
         definitions: {
           where: {
-            status: {
-              in: ["approved", "pending"],
-            },
+            status: "approved",
           },
           take: 3, // Only load top 3 definitions per phrase for card display
           include: {
@@ -47,9 +41,7 @@ export async function GET(request: NextRequest) {
             },
             examples: {
               where: {
-                status: {
-                  in: ["approved", "pending"],
-                },
+                status: "approved",
               },
               take: 1, // Only need 1 example for card display
               select: {

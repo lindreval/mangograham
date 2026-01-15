@@ -8,10 +8,10 @@ export async function getStatistics() {
     const [languageCount, phraseCount, exampleCount] = await Promise.all([
       prisma.language.count(),
       prisma.phrase.count({
-        where: { status: { in: ["approved", "pending"] } }
+        where: { status: "approved" }
       }),
       prisma.example.count({
-        where: { status: { in: ["approved", "pending"] } }
+        where: { status: "approved" }
       }),
     ]);
 

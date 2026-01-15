@@ -72,7 +72,7 @@ export default async function SearchPage({
         },
       },
       definitions: {
-        where: { status: { in: ["approved", "pending"] } },
+        where: { status: "approved" },
         include: {
           votes: true,
           author: {
@@ -83,7 +83,7 @@ export default async function SearchPage({
             },
           },
           examples: {
-            where: { status: { in: ["approved", "pending"] } },
+            where: { status: "approved" },
             include: {
               votes: true,
             },

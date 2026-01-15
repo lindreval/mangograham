@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
     // Optimized query - don't load all votes, calculate scores separately
     const rawPhrases = await prisma.phrase.findMany({
       where: {
+        status: "approved",
         OR: [
           { normalized: { contains: query.toLowerCase() } },
           { transliteration: { contains: query.toLowerCase() } }
@@ -46,14 +47,14 @@ export async function GET(request: NextRequest) {
           },
         },
         definitions: {
-          where: { status: { in: ["approved", "pending"] } },
+          where: { status: "approved" },
           take: 3, // Only load top 3 definitions per phrase for display
           include: {
             author: {
               select: { name: true, email: true },
             },
             examples: {
-              where: { status: { in: ["approved", "pending"] } },
+              where: { status: "approved" },
               take: 1, // Only need 1 example for display
               select: {
                 id: true,

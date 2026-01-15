@@ -89,11 +89,11 @@ export default async function PhrasePage({
         },
       },
       definitions: {
-        where: { status: { in: ["approved", "pending"] } },
+        where: { status: "approved" },
         include: {
           author: true,
           examples: {
-            where: { status: { in: ["approved", "pending"] } },
+            where: { status: "approved" },
             include: {
               votes: true,
               author: true,

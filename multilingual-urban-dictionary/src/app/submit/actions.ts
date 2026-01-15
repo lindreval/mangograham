@@ -8,7 +8,7 @@ import type { Session } from "next-auth";
 import { updateUserReputation } from "@/lib/reputation";
 import { AchievementService } from "@/lib/achievements";
 import { sanitizeText } from "@/lib/validations";
-import { filterContent, stripPII } from "@/lib/content-filter";
+import { filterContent, stripPII, stripLocationPII } from "@/lib/content-filter";
 
 interface CustomSession extends Session {
   user: {
@@ -142,7 +142,7 @@ export async function createSubmission(formData: FormData) {
 
             phrase = await tx.phrase.update({
               where: { id: existingPhrase.id },
-              data: { region: stripPII(updatedRegion) }
+              data: { region: stripLocationPII(updatedRegion) }
             });
           } else {
             phrase = existingPhrase;
@@ -159,7 +159,7 @@ export async function createSubmission(formData: FormData) {
             slug: slugify(data.transliteration || phraseText),
             partOfSpeech: data.partOfSpeech,
             transliteration: data.transliteration && data.transliteration.trim() ? sanitizeText(data.transliteration.trim()) : null,
-            region: data.region && data.region.trim() ? sanitizeText(data.region.trim()) : null,
+            region: data.region && data.region.trim() ? stripLocationPII(sanitizeText(data.region.trim())) : null,
             languageId: parseInt(data.languageId),
             authorId: userId,
           },
