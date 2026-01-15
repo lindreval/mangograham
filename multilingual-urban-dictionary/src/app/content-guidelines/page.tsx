@@ -200,7 +200,7 @@ export default function ContentGuidelinesPage() {
         <div className="p-6">
           <h2 className="text-xl font-semibold text-foreground mb-4">Report Violations</h2>
           <p className="text-muted-foreground mb-4">
-            Help us maintain quality by reporting content that violates these guidelines. Use the "Report" button on any content, or contact us directly:
+            Help us maintain quality by reporting content that violates these guidelines. Use the &quot;Report&quot; button on any content, or contact us directly:
           </p>
           <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
             <li>

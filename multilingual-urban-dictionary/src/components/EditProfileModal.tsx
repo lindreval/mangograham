@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AchievementNotificationService } from "@/lib/achievementNotificationService";
+import { Shield } from "lucide-react";
 import { triggerAchievementPolling } from "@/hooks/useAchievementPolling";
 import {
   Dialog,
@@ -63,7 +64,6 @@ export default function EditProfileModal({ user }: EditProfileModalProps) {
     languagesSpoken: user.languagesSpoken.join(", "),
   });
   const [error, setError] = useState("");
-  const [showPrivacyNotice, setShowPrivacyNotice] = useState(false);
   
   const { update } = useSession();
   const router = useRouter();
@@ -233,7 +233,7 @@ export default function EditProfileModal({ user }: EditProfileModalProps) {
               max={CHAR_LIMITS.location}
             />
             <p className="text-xs text-muted-foreground">
-              ⚠️ This information will be visible on your public profile. Only share what you're comfortable with.
+              ⚠️ This information will be visible on your public profile. Only share what you&apos;re comfortable with.
             </p>
           </div>
           
