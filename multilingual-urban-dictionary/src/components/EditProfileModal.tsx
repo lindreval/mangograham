@@ -63,6 +63,7 @@ export default function EditProfileModal({ user }: EditProfileModalProps) {
     languagesSpoken: user.languagesSpoken.join(", "),
   });
   const [error, setError] = useState("");
+  const [showPrivacyNotice, setShowPrivacyNotice] = useState(false);
   
   const { update } = useSession();
   const router = useRouter();
@@ -149,6 +150,15 @@ export default function EditProfileModal({ user }: EditProfileModalProps) {
           <DialogDescription>
             Make changes to your profile here. Click save when you&apos;re done.
           </DialogDescription>
+          <div className="mt-3 p-3 bg-yellow-100/50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+            <p className="text-xs text-yellow-800 dark:text-yellow-200 flex items-center gap-2">
+              <Shield className="w-4 h-4" />
+              <span>
+                <strong>Privacy Notice:</strong> All profile information is public and visible to other users. 
+                Do not share personal information like phone numbers, email addresses, or home addresses.
+              </span>
+            </p>
+          </div>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -207,18 +217,24 @@ export default function EditProfileModal({ user }: EditProfileModalProps) {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
+            <Label htmlFor="location">
+              Location
+              <span className="text-xs text-muted-foreground ml-2">(Public)</span>
+            </Label>
             <Input
               id="location"
               value={formData.location}
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              placeholder="Your location"
+              placeholder="Your location (optional)"
               maxLength={CHAR_LIMITS.location}
             />
             <CharacterCounter
               current={formData.location.length}
               max={CHAR_LIMITS.location}
             />
+            <p className="text-xs text-muted-foreground">
+              ⚠️ This information will be visible on your public profile. Only share what you're comfortable with.
+            </p>
           </div>
           
           <div className="space-y-2">

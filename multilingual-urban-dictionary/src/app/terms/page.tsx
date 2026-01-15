@@ -100,8 +100,8 @@ export default function TermsPage() {
 
           <LegalSection icon={<User className="w-5 h-5" />} title="Eligibility" sectionNumber={1}>
             <p>
-              You must be at least <strong className="text-foreground">16 years old</strong> to use yungsalita.com. By using the site, you represent
-              that you meet this requirement.
+              You must be at least <strong className="text-foreground">18 years old</strong> to use yungsalita.com. By using the site, you represent
+              that you meet this age requirement. This age requirement is in compliance with Google AdSense policies.
             </p>
           </LegalSection>
 

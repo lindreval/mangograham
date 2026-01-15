@@ -9,6 +9,10 @@ import { AchievementNotificationService } from "@/lib/achievementNotificationSer
 import { triggerAchievementPolling } from "@/hooks/useAchievementPolling";
 import safeConfetti from "@/lib/confetti";
 import { CharacterCounter } from "@/components/ui/CharacterCounter";
+import { filterContent } from "@/lib/content-filter";
+import { Checkbox } from "@/components/ui/checkbox";
+import Link from "next/link";
+import { toast } from "@/hooks/use-toast";
 
 // Character limits for submission fields
 const CHAR_LIMITS = {
@@ -51,6 +55,8 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
     searchParams.get("languageId") || ""
   );
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
+  const [acceptedGuidelines, setAcceptedGuidelines] = useState(false);
+  const [contentWarnings, setContentWarnings] = useState<string[]>([]);
 
   // Form field states for progress tracking
   const [phrase, setPhrase] = useState(searchParams.get("phrase") || "");
@@ -70,6 +76,38 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
     (l) => l.id.toString() === selectedLanguageId
   );
   const requiresTransliteration = selectedLanguage?.transliteration || false;
+
+  // Content validation function
+  const validateContent = () => {
+    const warnings: string[] = [];
+    
+    // Check phrase
+    if (phrase && !isExistingPhrase) {
+      const phraseResult = filterContent(phrase);
+      if (!phraseResult.isClean) {
+        warnings.push(...phraseResult.issues.map(issue => `Phrase: ${issue}`));
+      }
+    }
+    
+    // Check definition
+    if (definition && !isExistingDefinition) {
+      const definitionResult = filterContent(definition);
+      if (!definitionResult.isClean) {
+        warnings.push(...definitionResult.issues.map(issue => `Definition: ${issue}`));
+      }
+    }
+    
+    // Check example
+    if (example) {
+      const exampleResult = filterContent(example);
+      if (!exampleResult.isClean) {
+        warnings.push(...exampleResult.issues.map(issue => `Example: ${issue}`));
+      }
+    }
+    
+    setContentWarnings(warnings);
+    return warnings.length === 0;
+  };
 
   // Calculate form progress
   const progress = useMemo(() => {
@@ -205,6 +243,28 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
         <form
           onSubmit={(e) => {
             e.preventDefault();
+            
+            // Validate content
+            const isContentClean = validateContent();
+            if (!isContentClean) {
+              toast({
+                title: "Content Policy Violation",
+                description: "Your submission contains content that violates our guidelines. Please review and edit.",
+                variant: "destructive",
+              });
+              return;
+            }
+            
+            // Check guidelines acceptance
+            if (!acceptedGuidelines) {
+              toast({
+                title: "Accept Guidelines Required",
+                description: "Please accept our content guidelines before submitting.",
+                variant: "destructive",
+              });
+              return;
+            }
+            
             setIsSubmitting(true);
             const formData = new FormData(e.currentTarget);
             handleSubmit(formData);
@@ -287,7 +347,13 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
               }`}
               placeholder="e.g. Qué chido"
               value={isExistingPhrase ? preFilledPhrase : phrase}
-              onChange={(e) => !isExistingPhrase && setPhrase(e.target.value)}
+              onChange={(e) => {
+                if (!isExistingPhrase) {
+                  setPhrase(e.target.value);
+                  // Debounced validation - validate after user stops typing
+                  setTimeout(() => validateContent(), 500);
+                }
+              }}
               disabled={!!isExistingPhrase}
               required={!isExistingPhrase}
               maxLength={CHAR_LIMITS.phrase}
@@ -389,11 +455,15 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
                 isExistingDefinition ? "e.g. ¡Qué chido está tu carro!" : ""
               }
               value={isExistingDefinition ? example : definition}
-              onChange={(e) =>
-                isExistingDefinition
-                  ? setExample(e.target.value)
-                  : setDefinition(e.target.value)
-              }
+              onChange={(e) => {
+                if (isExistingDefinition) {
+                  setExample(e.target.value);
+                } else {
+                  setDefinition(e.target.value);
+                }
+                // Debounced validation
+                setTimeout(() => validateContent(), 500);
+              }}
               maxLength={isExistingDefinition ? CHAR_LIMITS.example : CHAR_LIMITS.definition}
               required={!isExistingDefinition}
             />
@@ -458,10 +528,44 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
             </label>
           )}
 
+          {/* Content warnings display */}
+          {contentWarnings.length > 0 && (
+            <div className="rounded-lg border-2 border-destructive/30 bg-destructive/5 p-4">
+              <p className="font-medium text-destructive mb-2">Content Policy Issues Detected:</p>
+              <ul className="text-sm text-destructive/80 space-y-1">
+                {contentWarnings.map((warning, index) => (
+                  <li key={index}>• {warning}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Guidelines acceptance checkbox */}
+          <div className="flex items-start gap-3 p-4 rounded-lg border-2 border-primary/20 bg-primary/5">
+            <Checkbox
+              id="guidelines"
+              checked={acceptedGuidelines}
+              onCheckedChange={(checked) => setAcceptedGuidelines(checked as boolean)}
+              className="mt-1"
+              required
+            />
+            <label htmlFor="guidelines" className="text-sm text-muted-foreground leading-relaxed cursor-pointer">
+              I have read and agree to follow the{" "}
+              <Link 
+                href="/content-guidelines" 
+                target="_blank" 
+                className="text-primary hover:underline font-medium"
+              >
+                Content Guidelines
+              </Link>{" "}
+              and understand that violations may result in content removal and account suspension. I confirm that my submission does not contain personal information, hate speech, or inappropriate content.
+            </label>
+          </div>
+
           {/* Submit button */}
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !acceptedGuidelines || contentWarnings.length > 0}
             className="w-full flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-primary-foreground font-semibold shadow-card hover:shadow-card-hover hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all duration-[var(--duration-hover)] ease-[var(--ease-smooth)]"
           >
             {isSubmitting ? (
@@ -488,7 +592,7 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
             >
               Terms of Service
             </a>{" "}
-            and confirm that you are at least 16 years old.
+            and confirm that you are at least 18 years old.
           </div>
         </form>
       </div>

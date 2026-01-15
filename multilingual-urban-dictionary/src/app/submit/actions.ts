@@ -8,6 +8,7 @@ import type { Session } from "next-auth";
 import { updateUserReputation } from "@/lib/reputation";
 import { AchievementService } from "@/lib/achievements";
 import { sanitizeText } from "@/lib/validations";
+import { filterContent, stripPII } from "@/lib/content-filter";
 
 interface CustomSession extends Session {
   user: {
@@ -40,6 +41,20 @@ export async function createSubmission(formData: FormData) {
     region: formData.get("region") as string | null,
   };
 
+  // Validate content on server side
+  const contentToValidate = [
+    data.phrase,
+    data.definition,
+    data.example,
+    data.exampleTranslation,
+    data.region
+  ].filter(Boolean).join(' ');
+  
+  const contentCheck = filterContent(contentToValidate);
+  if (!contentCheck.isClean) {
+    throw new Error("Content violates our content guidelines. Please review and edit.");
+  }
+
   // Extract tag IDs from form data
   const tagIds: number[] = [];
   for (const [key, value] of formData.entries()) {
@@ -65,8 +80,8 @@ export async function createSubmission(formData: FormData) {
     // Adding example to existing definition - simple operation with XSS sanitization
     await prisma.example.create({
       data: {
-        text: sanitizeText(data.example.trim()),
-        translation: data.exampleTranslation && data.exampleTranslation.trim() ? sanitizeText(data.exampleTranslation.trim()) : null,
+        text: stripPII(sanitizeText(data.example.trim())),
+        translation: data.exampleTranslation && data.exampleTranslation.trim() ? stripPII(sanitizeText(data.exampleTranslation.trim())) : null,
         authorId: userId,
         definitionId: parseInt(data.definitionId),
       },
@@ -127,7 +142,7 @@ export async function createSubmission(formData: FormData) {
 
             phrase = await tx.phrase.update({
               where: { id: existingPhrase.id },
-              data: { region: updatedRegion }
+              data: { region: stripPII(updatedRegion) }
             });
           } else {
             phrase = existingPhrase;
@@ -139,7 +154,7 @@ export async function createSubmission(formData: FormData) {
         // Create phrase with XSS sanitization
         phrase = await tx.phrase.create({
           data: {
-            textOriginal: sanitizeText(phraseText),
+            textOriginal: stripPII(sanitizeText(phraseText)),
             normalized: phraseText.toLowerCase(),
             slug: slugify(data.transliteration || phraseText),
             partOfSpeech: data.partOfSpeech,
@@ -155,7 +170,7 @@ export async function createSubmission(formData: FormData) {
       const definition = await tx.definition.create({
         data: {
           phraseId: phrase.id,
-          body: sanitizeText(data.definition.trim()),
+          body: stripPII(sanitizeText(data.definition.trim())),
           authorId: userId,
         },
       });
@@ -164,8 +179,8 @@ export async function createSubmission(formData: FormData) {
       if (data.example && data.example.trim()) {
         await tx.example.create({
           data: {
-            text: sanitizeText(data.example.trim()),
-            translation: data.exampleTranslation && data.exampleTranslation.trim() ? sanitizeText(data.exampleTranslation.trim()) : null,
+            text: stripPII(sanitizeText(data.example.trim())),
+            translation: data.exampleTranslation && data.exampleTranslation.trim() ? stripPII(sanitizeText(data.exampleTranslation.trim())) : null,
             authorId: userId,
             definitionId: definition.id,
           },
