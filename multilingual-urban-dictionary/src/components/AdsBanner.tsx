@@ -22,12 +22,10 @@ export default function AdsBanner(props: AdsBannerProps) {
   const { isNSFW, ...adProps } = props;
   const pathname = usePathname();
 
-  // Don't render ads on NSFW content
-  if (isNSFW) {
-    return null;
-  }
-
   useEffect(() => {
+    // Don't push ads if content is NSFW
+    if (isNSFW) return;
+
     const pushAd = () => {
       try {
         if (typeof window !== "undefined" && window.adsbygoogle) {
@@ -40,9 +38,14 @@ export default function AdsBanner(props: AdsBannerProps) {
 
     // Delay to ensure DOM is ready
     const timeoutId = setTimeout(pushAd, 100);
-    
+
     return () => clearTimeout(timeoutId);
-  }, [pathname]);
+  }, [pathname, isNSFW]);
+
+  // Don't render ads on NSFW content
+  if (isNSFW) {
+    return null;
+  }
 
   return (
     <div className="ad-container">
