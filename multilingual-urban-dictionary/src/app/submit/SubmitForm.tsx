@@ -56,6 +56,11 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [acceptedGuidelines, setAcceptedGuidelines] = useState(false);
 
+  // NSFW flags
+  const [phraseNSFW, setPhraseNSFW] = useState(false);
+  const [definitionNSFW, setDefinitionNSFW] = useState(false);
+  const [exampleNSFW, setExampleNSFW] = useState(false);
+
   // Form field states for progress tracking
   const [phrase, setPhrase] = useState(searchParams.get("phrase") || "");
   const [definition, setDefinition] = useState("");
@@ -479,10 +484,64 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
             </label>
           )}
 
-          {/* Hidden inputs - always present for form submission */}
-          <input type="hidden" name="phraseNSFW" value="false" />
-          <input type="hidden" name="definitionNSFW" value="false" />
-          <input type="hidden" name="exampleNSFW" value="false" />
+          {/* NSFW Content Warning Section */}
+          <div className="rounded-lg border-2 border-orange-500/30 bg-orange-50/50 dark:bg-orange-950/20 p-4 space-y-3">
+            <div className="flex items-start gap-2">
+              <span className="text-lg">🔞</span>
+              <div>
+                <h3 className="font-semibold text-foreground text-sm">Mature Content Declaration</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Mark any content that contains profanity, sexual references, or adult themes. NSFW content will be hidden from unauthenticated users and will not show ads.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2 mt-3">
+              {!isExistingPhrase && (
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="phraseNSFW"
+                    checked={phraseNSFW}
+                    onCheckedChange={(checked) => setPhraseNSFW(checked as boolean)}
+                  />
+                  <label htmlFor="phraseNSFW" className="text-sm text-foreground leading-relaxed cursor-pointer">
+                    This phrase contains mature/NSFW language
+                  </label>
+                  <input type="hidden" name="phraseNSFW" value={phraseNSFW ? "true" : "false"} />
+                </div>
+              )}
+
+              {!isExistingDefinition && (
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="definitionNSFW"
+                    checked={definitionNSFW}
+                    onCheckedChange={(checked) => setDefinitionNSFW(checked as boolean)}
+                  />
+                  <label htmlFor="definitionNSFW" className="text-sm text-foreground leading-relaxed cursor-pointer">
+                    This definition contains mature/NSFW content
+                  </label>
+                  <input type="hidden" name="definitionNSFW" value={definitionNSFW ? "true" : "false"} />
+                </div>
+              )}
+
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="exampleNSFW"
+                  checked={exampleNSFW}
+                  onCheckedChange={(checked) => setExampleNSFW(checked as boolean)}
+                />
+                <label htmlFor="exampleNSFW" className="text-sm text-foreground leading-relaxed cursor-pointer">
+                  This example contains mature/NSFW content
+                </label>
+                <input type="hidden" name="exampleNSFW" value={exampleNSFW ? "true" : "false"} />
+              </div>
+            </div>
+
+            {/* Hidden inputs for fields that are pre-filled */}
+            {isExistingPhrase && <input type="hidden" name="phraseNSFW" value="false" />}
+            {isExistingDefinition && <input type="hidden" name="definitionNSFW" value="false" />}
+          </div>
 
           {/* Guidelines acceptance checkbox */}
           <div className="flex items-start gap-3 p-4 rounded-lg border-2 border-primary/20 bg-primary/5">
