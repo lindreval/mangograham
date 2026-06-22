@@ -57,6 +57,9 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [acceptedGuidelines, setAcceptedGuidelines] = useState(false);
   const [contentWarnings, setContentWarnings] = useState<string[]>([]);
+  const [phraseNSFW, setPhraseNSFW] = useState(false);
+  const [definitionNSFW, setDefinitionNSFW] = useState(false);
+  const [exampleNSFW, setExampleNSFW] = useState(false);
 
   // Form field states for progress tracking
   const [phrase, setPhrase] = useState(searchParams.get("phrase") || "");
@@ -557,9 +560,10 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
                   <div className="flex items-start gap-3 mb-2">
                     <Checkbox
                       id="phraseNSFW"
-                      name="phraseNSFW"
-                      value="true"
+                      checked={phraseNSFW}
+                      onCheckedChange={(checked) => setPhraseNSFW(checked as boolean)}
                     />
+                    <input type="hidden" name="phraseNSFW" value={phraseNSFW ? "true" : "false"} />
                     <label htmlFor="phraseNSFW" className="text-sm cursor-pointer">
                       This <strong>phrase</strong> contains mature/adult content
                     </label>
@@ -571,9 +575,10 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
                   <div className="flex items-start gap-3 mb-2">
                     <Checkbox
                       id="definitionNSFW"
-                      name="definitionNSFW"
-                      value="true"
+                      checked={definitionNSFW}
+                      onCheckedChange={(checked) => setDefinitionNSFW(checked as boolean)}
                     />
+                    <input type="hidden" name="definitionNSFW" value={definitionNSFW ? "true" : "false"} />
                     <label htmlFor="definitionNSFW" className="text-sm cursor-pointer">
                       This <strong>definition</strong> contains mature/adult content
                     </label>
@@ -584,9 +589,10 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
                 <div className="flex items-start gap-3">
                   <Checkbox
                     id="exampleNSFW"
-                    name="exampleNSFW"
-                    value="true"
+                    checked={exampleNSFW}
+                    onCheckedChange={(checked) => setExampleNSFW(checked as boolean)}
                   />
+                  <input type="hidden" name="exampleNSFW" value={exampleNSFW ? "true" : "false"} />
                   <label htmlFor="exampleNSFW" className="text-sm cursor-pointer">
                     This <strong>example</strong> contains mature/adult content
                   </label>
