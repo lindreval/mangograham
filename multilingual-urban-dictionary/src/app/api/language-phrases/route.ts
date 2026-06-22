@@ -80,6 +80,7 @@ export async function GET(request: NextRequest) {
                 createdAt: true,
                 updatedAt: true,
                 status: true,
+                isNSFW: true,
                 authorId: true,
                 definitionId: true,
               },

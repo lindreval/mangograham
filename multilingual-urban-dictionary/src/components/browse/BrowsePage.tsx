@@ -64,6 +64,7 @@ export default async function BrowsePage() {
                 createdAt: true,
                 updatedAt: true,
                 status: true,
+                isNSFW: true,
                 authorId: true,
                 definitionId: true,
               },
