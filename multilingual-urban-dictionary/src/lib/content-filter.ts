@@ -50,6 +50,7 @@ export interface ContentFilterResult {
   hasProfanity: boolean;
   hasPII: boolean;
   hasProhibitedContent: boolean;
+  suggestNSFW: boolean;
   filteredText?: string;
 }
 
@@ -61,11 +62,13 @@ export function filterContent(text: string): ContentFilterResult {
   let hasProfanity = false;
   let hasPII = false;
   let hasProhibitedContent = false;
+  let suggestNSFW = false;
 
   // Check for profanity
   try {
     if (filter.isProfane(text)) {
       hasProfanity = true;
+      suggestNSFW = true; // Profanity should be marked as NSFW
       issues.push("Content contains inappropriate language");
     }
   } catch (error) {
@@ -119,7 +122,21 @@ export function filterContent(text: string): ContentFilterResult {
   for (const { pattern, issue } of prohibitedIndicators) {
     if (pattern.test(lowerText)) {
       hasProhibitedContent = true;
+      suggestNSFW = true; // Prohibited content should be marked as NSFW
       issues.push(`Content contains prohibited content: ${issue}`);
+    }
+  }
+
+  // Check for NSFW keywords that aren't necessarily prohibited but should be flagged
+  const nsfwKeywords = [
+    "sex", "sexual", "porn", "nsfw", "explicit", "mature", "adult", "nude", "naked",
+    "fuck", "shit", "ass", "dick", "pussy", "cock", "boobs", "tits"
+  ];
+
+  for (const keyword of nsfwKeywords) {
+    if (lowerText.includes(keyword)) {
+      suggestNSFW = true;
+      break;
     }
   }
 
@@ -132,6 +149,7 @@ export function filterContent(text: string): ContentFilterResult {
     hasProfanity,
     hasPII,
     hasProhibitedContent,
+    suggestNSFW,
     filteredText: filteredText !== text ? filteredText : undefined,
   };
 }

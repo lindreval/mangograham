@@ -15,10 +15,17 @@ interface AdsBannerProps {
   "data-ad-format": string;
   "data-full-width-responsive": string;
   "data-ad-layout"?: string;
+  isNSFW?: boolean; // Don't show ads on NSFW content for AdSense compliance
 }
 
 export default function AdsBanner(props: AdsBannerProps) {
+  const { isNSFW, ...adProps } = props;
   const pathname = usePathname();
+
+  // Don't render ads on NSFW content
+  if (isNSFW) {
+    return null;
+  }
 
   useEffect(() => {
     const pushAd = () => {
@@ -43,7 +50,7 @@ export default function AdsBanner(props: AdsBannerProps) {
         className="adsbygoogle"
         style={{ display: "block" }}
         data-ad-client={process.env.NEXT_PUBLIC_GOOGLE_ADS_CLIENT_ID}
-        {...props}
+        {...adProps}
       />
       {process.env.NODE_ENV === "development" && (
         <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded text-sm text-center">

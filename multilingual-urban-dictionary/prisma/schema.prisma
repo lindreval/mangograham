@@ -28,6 +28,7 @@ model Phrase {
   languageId     Int
   authorId       String?
   status         String       @default("pending")
+  isNSFW         Boolean      @default(false)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   definitions    Definition[]
@@ -40,6 +41,7 @@ model Phrase {
   @@index([languageId])
   @@index([authorId])
   @@index([status])
+  @@index([isNSFW])
   @@index([createdAt])
 }
 
@@ -50,6 +52,7 @@ model Definition {
   authorId  String
   phraseId  Int
   status    String           @default("pending")
+  isNSFW    Boolean          @default(false)
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
   author    User             @relation("UserDefinitions", fields: [authorId], references: [id])
@@ -60,6 +63,7 @@ model Definition {
   @@index([authorId])
   @@index([phraseId])
   @@index([status])
+  @@index([isNSFW])
   @@index([createdAt])
 }
 
@@ -70,6 +74,7 @@ model Example {
   authorId     String
   definitionId Int
   status       String        @default("pending")
+  isNSFW       Boolean       @default(false)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   author       User          @relation("UserExamples", fields: [authorId], references: [id])
@@ -79,6 +84,7 @@ model Example {
   @@index([definitionId])
   @@index([authorId])
   @@index([status])
+  @@index([isNSFW])
 }
 
 model DefinitionVote {

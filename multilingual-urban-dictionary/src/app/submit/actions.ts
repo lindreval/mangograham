@@ -39,20 +39,50 @@ export async function createSubmission(formData: FormData) {
     definitionId: formData.get("definitionId") as string | null,
     transliteration: formData.get("transliteration") as string | null,
     region: formData.get("region") as string | null,
+    phraseNSFW: formData.get("phraseNSFW") === "true",
+    definitionNSFW: formData.get("definitionNSFW") === "true",
+    exampleNSFW: formData.get("exampleNSFW") === "true",
   };
 
-  // Validate content on server side
-  const contentToValidate = [
-    data.phrase,
-    data.definition,
-    data.example,
-    data.exampleTranslation,
-    data.region
-  ].filter(Boolean).join(' ');
-  
-  const contentCheck = filterContent(contentToValidate);
-  if (!contentCheck.isClean) {
-    throw new Error("Content violates our content guidelines. Please review and edit.");
+  // Validate content on server side and auto-detect NSFW
+  let autoDetectedPhraseNSFW = data.phraseNSFW;
+  let autoDetectedDefinitionNSFW = data.definitionNSFW;
+  let autoDetectedExampleNSFW = data.exampleNSFW;
+
+  // Check phrase for NSFW content
+  if (data.phrase) {
+    const phraseCheck = filterContent(data.phrase);
+    if (!phraseCheck.isClean) {
+      throw new Error("Phrase content violates our content guidelines. Please review and edit.");
+    }
+    // Auto-flag as NSFW if detected
+    if (phraseCheck.suggestNSFW) {
+      autoDetectedPhraseNSFW = true;
+    }
+  }
+
+  // Check definition for NSFW content
+  if (data.definition) {
+    const definitionCheck = filterContent(data.definition);
+    if (!definitionCheck.isClean) {
+      throw new Error("Definition content violates our content guidelines. Please review and edit.");
+    }
+    // Auto-flag as NSFW if detected
+    if (definitionCheck.suggestNSFW) {
+      autoDetectedDefinitionNSFW = true;
+    }
+  }
+
+  // Check example for NSFW content
+  if (data.example) {
+    const exampleCheck = filterContent(data.example);
+    if (!exampleCheck.isClean) {
+      throw new Error("Example content violates our content guidelines. Please review and edit.");
+    }
+    // Auto-flag as NSFW if detected
+    if (exampleCheck.suggestNSFW) {
+      autoDetectedExampleNSFW = true;
+    }
   }
 
   // Extract tag IDs from form data
@@ -84,6 +114,7 @@ export async function createSubmission(formData: FormData) {
         translation: data.exampleTranslation && data.exampleTranslation.trim() ? stripPII(sanitizeText(data.exampleTranslation.trim())) : null,
         authorId: userId,
         definitionId: parseInt(data.definitionId),
+        isNSFW: autoDetectedExampleNSFW,
       },
     });
 
@@ -162,6 +193,7 @@ export async function createSubmission(formData: FormData) {
             region: data.region && data.region.trim() ? stripLocationPII(sanitizeText(data.region.trim())) : null,
             languageId: parseInt(data.languageId),
             authorId: userId,
+            isNSFW: autoDetectedPhraseNSFW,
           },
         });
       }
@@ -172,6 +204,7 @@ export async function createSubmission(formData: FormData) {
           phraseId: phrase.id,
           body: stripPII(sanitizeText(data.definition.trim())),
           authorId: userId,
+          isNSFW: autoDetectedDefinitionNSFW,
         },
       });
 
@@ -183,6 +216,7 @@ export async function createSubmission(formData: FormData) {
             translation: data.exampleTranslation && data.exampleTranslation.trim() ? stripPII(sanitizeText(data.exampleTranslation.trim())) : null,
             authorId: userId,
             definitionId: definition.id,
+            isNSFW: autoDetectedExampleNSFW,
           },
         });
       }

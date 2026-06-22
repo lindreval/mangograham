@@ -78,6 +78,7 @@ export default async function PhrasePage({
   const session = await getServerSession(authConfig);
   const userId = session?.user?.id;
   const isAdmin = session?.user?.role === "admin";
+  const isAuthenticated = !!userId;
 
   const phrase = await prisma.phrase.findUnique({
     where: { slug },
@@ -89,11 +90,19 @@ export default async function PhrasePage({
         },
       },
       definitions: {
-        where: { status: "approved" },
+        where: {
+          status: "approved",
+          // Hide NSFW content from unauthenticated users
+          ...(isAuthenticated ? {} : { isNSFW: false })
+        },
         include: {
           author: true,
           examples: {
-            where: { status: "approved" },
+            where: {
+              status: "approved",
+              // Hide NSFW examples from unauthenticated users
+              ...(isAuthenticated ? {} : { isNSFW: false })
+            },
             include: {
               votes: true,
               author: true,
@@ -122,6 +131,27 @@ export default async function PhrasePage({
   }
 
   if (!phrase || phrase.language.isoCode !== lang) return notFound();
+
+  // If phrase is NSFW and user is not authenticated, show auth required message
+  if (phrase.isNSFW && !isAuthenticated) {
+    return (
+      <main className="mx-auto max-w-4xl p-4 md:p-6 space-y-6 animate-page-enter">
+        <div className="rounded-[20px] border-4 border-destructive/50 bg-card text-card-foreground p-8 text-center shadow-card">
+          <div className="text-6xl mb-4">🔞</div>
+          <h1 className="text-2xl font-black mb-4">Age-Restricted Content</h1>
+          <p className="text-muted-foreground mb-6">
+            This phrase contains mature content. Please sign in to view (18+ only).
+          </p>
+          <Link
+            href="/api/auth/signin"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm text-primary-foreground font-bold shadow-md hover:shadow-lg hover:bg-primary/90 transition-all duration-200"
+          >
+            Sign In to View
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   // Generate JSON-LD structured data
   const jsonLd = {
@@ -169,10 +199,15 @@ export default async function PhrasePage({
                           "
           >
             {/* Language Badge */}
-            <div className="mb-4 relative z-10">
+            <div className="mb-4 relative z-10 flex items-center gap-2 flex-wrap">
               <span className="inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-bold bg-primary text-primary-foreground tracking-[0.15em] uppercase shadow-sm">
                 {phrase.language.name}
               </span>
+              {phrase.isNSFW && (
+                <span className="inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-bold bg-destructive text-destructive-foreground tracking-[0.15em] uppercase shadow-sm">
+                  🔞 NSFW
+                </span>
+              )}
             </div>
 
             {/* Hero Title */}
