@@ -57,9 +57,6 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [acceptedGuidelines, setAcceptedGuidelines] = useState(false);
   const [contentWarnings, setContentWarnings] = useState<string[]>([]);
-  const [phraseNSFW, setPhraseNSFW] = useState(false);
-  const [definitionNSFW, setDefinitionNSFW] = useState(false);
-  const [exampleNSFW, setExampleNSFW] = useState(false);
 
   // Form field states for progress tracking
   const [phrase, setPhrase] = useState(searchParams.get("phrase") || "");
@@ -543,65 +540,10 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
             </div>
           )}
 
-          {/* NSFW content marking */}
-          <div className="space-y-3 rounded-lg border-2 border-destructive/20 bg-destructive/5 p-4">
-            <div className="flex items-start gap-2">
-              <span className="text-2xl">🔞</span>
-              <div className="flex-1">
-                <h3 className="font-semibold text-foreground mb-1">Age-Restricted Content</h3>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Check the boxes below if your submission contains mature language, sexual references,
-                  drug references, or other adult content. NSFW content will only be visible to authenticated users (18+)
-                  and will not display ads for AdSense compliance.
-                </p>
-
-                {/* Hidden inputs - always present for form submission */}
-                <input type="hidden" name="phraseNSFW" value={phraseNSFW ? "true" : "false"} />
-                <input type="hidden" name="definitionNSFW" value={definitionNSFW ? "true" : "false"} />
-                <input type="hidden" name="exampleNSFW" value={exampleNSFW ? "true" : "false"} />
-
-                {/* Phrase NSFW checkbox */}
-                {!isExistingPhrase && (
-                  <div className="flex items-start gap-3 mb-2">
-                    <Checkbox
-                      id="phraseNSFW"
-                      checked={phraseNSFW}
-                      onCheckedChange={(checked) => setPhraseNSFW(checked as boolean)}
-                    />
-                    <label htmlFor="phraseNSFW" className="text-sm cursor-pointer">
-                      This <strong>phrase</strong> contains mature/adult content
-                    </label>
-                  </div>
-                )}
-
-                {/* Definition NSFW checkbox */}
-                {!isExistingDefinition && (
-                  <div className="flex items-start gap-3 mb-2">
-                    <Checkbox
-                      id="definitionNSFW"
-                      checked={definitionNSFW}
-                      onCheckedChange={(checked) => setDefinitionNSFW(checked as boolean)}
-                    />
-                    <label htmlFor="definitionNSFW" className="text-sm cursor-pointer">
-                      This <strong>definition</strong> contains mature/adult content
-                    </label>
-                  </div>
-                )}
-
-                {/* Example NSFW checkbox */}
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    id="exampleNSFW"
-                    checked={exampleNSFW}
-                    onCheckedChange={(checked) => setExampleNSFW(checked as boolean)}
-                  />
-                  <label htmlFor="exampleNSFW" className="text-sm cursor-pointer">
-                    This <strong>example</strong> contains mature/adult content
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Hidden inputs - always present for form submission */}
+          <input type="hidden" name="phraseNSFW" value="false" />
+          <input type="hidden" name="definitionNSFW" value="false" />
+          <input type="hidden" name="exampleNSFW" value="false" />
 
           {/* Guidelines acceptance checkbox */}
           <div className="flex items-start gap-3 p-4 rounded-lg border-2 border-primary/20 bg-primary/5">
