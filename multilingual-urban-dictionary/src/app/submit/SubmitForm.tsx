@@ -555,6 +555,11 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
                   and will not display ads for AdSense compliance.
                 </p>
 
+                {/* Hidden inputs - always present for form submission */}
+                <input type="hidden" name="phraseNSFW" value={phraseNSFW ? "true" : "false"} />
+                <input type="hidden" name="definitionNSFW" value={definitionNSFW ? "true" : "false"} />
+                <input type="hidden" name="exampleNSFW" value={exampleNSFW ? "true" : "false"} />
+
                 {/* Phrase NSFW checkbox */}
                 {!isExistingPhrase && (
                   <div className="flex items-start gap-3 mb-2">
@@ -563,7 +568,6 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
                       checked={phraseNSFW}
                       onCheckedChange={(checked) => setPhraseNSFW(checked as boolean)}
                     />
-                    <input type="hidden" name="phraseNSFW" value={phraseNSFW ? "true" : "false"} />
                     <label htmlFor="phraseNSFW" className="text-sm cursor-pointer">
                       This <strong>phrase</strong> contains mature/adult content
                     </label>
@@ -578,7 +582,6 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
                       checked={definitionNSFW}
                       onCheckedChange={(checked) => setDefinitionNSFW(checked as boolean)}
                     />
-                    <input type="hidden" name="definitionNSFW" value={definitionNSFW ? "true" : "false"} />
                     <label htmlFor="definitionNSFW" className="text-sm cursor-pointer">
                       This <strong>definition</strong> contains mature/adult content
                     </label>
@@ -592,7 +595,6 @@ export default function SubmitForm({ languages }: SubmitFormProps) {
                     checked={exampleNSFW}
                     onCheckedChange={(checked) => setExampleNSFW(checked as boolean)}
                   />
-                  <input type="hidden" name="exampleNSFW" value={exampleNSFW ? "true" : "false"} />
                   <label htmlFor="exampleNSFW" className="text-sm cursor-pointer">
                     This <strong>example</strong> contains mature/adult content
                   </label>
